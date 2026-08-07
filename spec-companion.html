@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SB118 Browser Extension — spec</title>
+<style>
+  :root{
+    --navy:#1d72a6; --gold:#bb8a33; --red:#a61e22; --space:#05080f;
+    --ink:#12213a; --muted:#5b6b85; --line:#e2e7f0; --bg:#f6f8fb; --card:#fff;
+    --ok:#1f8a52; --warn:#b3541e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Lato,Helvetica,Arial,sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:900px;margin:0 auto;padding:0 22px 90px}
+  header.hero{background:linear-gradient(160deg,#05080f,#123049 70%,#1d72a6);color:#eaf2fb;
+    padding:52px 22px 44px;margin-bottom:34px}
+  header.hero .inner{max-width:900px;margin:0 auto}
+  .kicker{text-transform:uppercase;letter-spacing:.16em;font-size:12px;color:#bcd4ea;margin:0 0 10px}
+  h1{font-family:Oswald,"Segoe UI",sans-serif;font-weight:600;font-size:2.5rem;line-height:1.1;margin:0 0 12px}
+  .hero p{margin:0;max-width:60ch;color:#d6e4f2;font-size:1.06rem}
+  .meta{margin-top:20px;display:flex;flex-wrap:wrap;gap:8px}
+  .pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#eaf2fb;
+    padding:4px 11px;border-radius:999px;font-size:12.5px}
+  h2{font-family:Oswald,"Segoe UI",sans-serif;font-weight:600;font-size:1.5rem;margin:44px 0 6px;
+    padding-top:14px;border-top:2px solid var(--line)}
+  h2 .n{color:var(--gold);margin-right:10px}
+  h3{font-size:1.06rem;margin:24px 0 8px;color:var(--navy)}
+  p{margin:10px 0}
+  .lead{color:var(--muted);margin-top:2px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:16px 0;
+    box-shadow:0 1px 2px rgba(18,33,58,.04)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:680px){.grid2{grid-template-columns:1fr}}
+  .tag{display:inline-block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;
+    padding:2px 8px;border-radius:6px;font-weight:600;vertical-align:middle}
+  .tag.core{background:#e6f4ec;color:var(--ok)}
+  .tag.staff{background:#e7f0f9;color:var(--navy)}
+  .tag.parked{background:#f0eee9;color:#8a6d2f}
+  ul.feat{list-style:none;padding:0;margin:8px 0}
+  ul.feat li{padding:11px 0;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:flex-start}
+  ul.feat li:last-child{border-bottom:0}
+  ul.feat .ico{font-size:18px;line-height:1.4;flex:0 0 22px;text-align:center}
+  ul.feat b{display:block;font-size:.98rem}
+  ul.feat span.d{color:var(--muted);font-size:.9rem}
+  .callout{border-left:4px solid var(--warn);background:#fff8f1;border-radius:0 10px 10px 0;
+    padding:16px 20px;margin:18px 0}
+  .callout.ok{border-color:var(--ok);background:#f1faf4}
+  .callout h4{margin:0 0 6px;color:var(--warn);font-size:1rem}
+  .callout.ok h4{color:var(--ok)}
+  code{background:#eef2f8;padding:1.5px 6px;border-radius:5px;font-size:.86em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  pre{background:#0d1524;color:#d7e3f4;padding:16px 18px;border-radius:10px;overflow-x:auto;font-size:.83rem;
+    line-height:1.5}
+  pre code{background:none;padding:0;color:inherit}
+  /* popup mockup */
+  .popupwrap{display:flex;justify-content:center;margin:20px 0}
+  .popup{width:320px;background:#11162a;color:#dfe6ff;border-radius:12px;overflow:hidden;
+    font-size:12.5px;box-shadow:0 10px 30px rgba(5,8,15,.35)}
+  .popup .ph{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#161d38;font-weight:600}
+  .popup .dot{color:#4ade80}
+  .popup .pin{padding:10px 12px}
+  .popup input{width:100%;padding:7px 9px;border-radius:7px;border:1px solid #2a3355;background:#0e1428;color:#dfe6ff}
+  .popup .grid{padding:2px 12px 10px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .popup .grid div{background:#1a2244;border-radius:7px;padding:9px 2px;text-align:center}
+  .popup .sec{padding:9px 12px;border-top:1px solid #222a4a}
+  .popup .lbl{color:#8ea2d8;font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+  .popup .chips{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+  .popup .chip{background:#243056;border-radius:6px;padding:4px 9px}
+  .popup .staff{border-top:1px dashed #33406b;background:#0e1730}
+  .popup .staff .lbl{color:#6aa9ff}
+  /* flow */
+  .flow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0}
+  .flow .step{background:#fff;border:1px solid var(--line);border-radius:9px;padding:10px 14px;font-size:.9rem;flex:1;min-width:150px}
+  .flow .arw{color:var(--gold);font-weight:700}
+  /* phases */
+  .phase{display:flex;gap:14px;margin:14px 0}
+  .phase .num{flex:0 0 40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-family:Oswald,sans-serif;font-size:1.2rem}
+  .phase .body{flex:1;background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .phase .body b{color:var(--navy)}
+  .endpoint{font-family:ui-monospace,Menlo,monospace;font-size:.88rem;background:#0d1524;color:#8fd0a0;
+    padding:3px 8px;border-radius:6px;display:inline-block}
+  .endpoint.post{color:#f0b45e}
+  footer{color:var(--muted);font-size:.85rem;margin-top:50px;border-top:1px solid var(--line);padding-top:18px}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="inner">
+    <p class="kicker">StarBase 118 · Design spec</p>
+    <h1>SB118 Browser Extension</h1>
+    <p>One launcher, search box, and personalized dashboard for every SB118 property — safe to hand the whole membership, with staff power-tools that light up automatically.</p>
+    <div class="meta">
+      <span class="pill">2026-07-24</span>
+      <span class="pill">Chrome · Edge · Brave · Firefox</span>
+      <span class="pill">No passwords stored</span>
+      <span class="pill">SB118-only</span>
+      <span class="pill">4-phase build</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <p class="lead">This is the readable companion to the spec at <code>sb118/browser-extension/docs/superpowers/specs/2026-07-24-sb118-browser-extension-design.md</code>. Same content, easier to skim.</p>
+
+  <h2><span class="n">01</span>The idea in one breath</h2>
+  <div class="card">
+    <p>SB118's stuff is scattered — HQ, the wiki, Discord, the main site, the Library, the sim archive, and (for staff) the forums, NocoDB, Authentik, n8n. This extension puts a single button in the browser toolbar that opens a popup with quick links to all of it, a search box that covers the wiki and sim archive, and personalized shortcuts to <em>your</em> ship and character. Staff see extra admin links and a cross-system member lookup that nobody else does.</p>
+    <p><strong>The guiding constraint:</strong> it never touches passwords. It leans entirely on the Authentik single-sign-on session you already have — so it's safe to give to every member.</p>
+  </div>
+
+  <h2><span class="n">02</span>Two pieces</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-top:0">The extension</h3>
+      <p>A Manifest V3 extension — one shared codebase for Chrome/Edge/Brave, plus a small Firefox adaptation. It's a popup UI, a background worker (session checks, data fetch, badge polling), a content script (glossary tooltips), and local storage for your pinned links.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">One HQ endpoint (the backbone)</h3>
+      <p>A new <code>/api/me</code> route on HQ reads your Authentik session and hands back your ship, character, staff role, notification counts, and announcements. Everything personalized rides on this. Two small staff-only endpoints come later.</p>
+    </div>
+  </div>
+
+  <h2><span class="n">03</span>What the popup looks like</h2>
+  <p class="lead">Layout A — the stacked dashboard you picked. Everything visible, scroll for more. Staff section appears at the bottom only when HQ says you're staff.</p>
+  <div class="popupwrap">
+    <div class="popup">
+      <div class="ph"><span>🛰 StarBase 118</span><span class="dot">● signed in</span></div>
+      <div class="pin"><input value="Search wiki · sims" readonly></div>
+      <div class="grid">
+        <div>HQ</div><div>Wiki</div><div>Discord</div><div>Site</div>
+        <div>Library</div><div>Sims</div><div>★ Pin</div><div>More</div>
+      </div>
+      <div class="sec"><span class="lbl">My stuff</span>
+        <div class="chips"><span class="chip">🚀 My ship</span><span class="chip">👤 My character</span></div></div>
+      <div class="sec"><span class="lbl">Pinned</span>
+        <div class="chips"><span class="chip">★ Duty roster</span><span class="chip">★ Species DB</span></div></div>
+      <div class="sec"><span class="lbl">Announcements</span>
+        <div style="margin-top:5px;color:#b9c4e8">New: Awards ceremony scheduled…</div></div>
+      <div class="sec staff"><span class="lbl">Staff</span>
+        <div class="chips"><span class="chip">Forums</span><span class="chip">Authentik</span><span class="chip">n8n</span><span class="chip">Member lookup</span></div></div>
+    </div>
+  </div>
+
+  <h2><span class="n">04</span>How login works — no passwords</h2>
+  <div class="flow">
+    <div class="step">You're already signed in to Authentik SSO</div>
+    <span class="arw">→</span>
+    <div class="step">Extension asks HQ <code>/api/me</code> using your session</div>
+    <span class="arw">→</span>
+    <div class="step">200 = green light + your data · 401 = one-click login</div>
+  </div>
+  <p>The login light is just "did <code>/api/me</code> answer or not." Once you have an Authentik session, every SB118 link single-signs-on. The extension stores nothing sensitive and holds no API keys.</p>
+
+  <div class="callout">
+    <h4>⚠ The one real risk — and how we de-risk it first</h4>
+    <p>A request from an extension to HQ is technically <em>cross-site</em>, and Authentik's session cookie may be set to not travel on cross-site requests (SameSite). If so, a naive call would come back "signed out" even when you're not.</p>
+    <p><strong>Plan:</strong> Phase 1 opens with a small spike that proves the extension can read your live session (running the request inside an HQ tab's context, where cookies always flow). If it can't be made to work cleanly, the personalized features fall back to a one-time manual "my ship / my character" setting and the extension still ships as a launcher + search tool. No catastrophic failure mode.</p>
+  </div>
+
+  <h2><span class="n">05</span>The features</h2>
+
+  <h3>Member core <span class="tag core">everyone</span></h3>
+  <ul class="feat">
+    <li><span class="ico">🚀</span><div><b>Quick-launch popup</b><span class="d">HQ · Wiki · Discord · Main site · Library · Sim archive</span></div></li>
+    <li><span class="ico">🟢</span><div><b>Login status light</b><span class="d">Green when signed in; click to log in when not</span></div></li>
+    <li><span class="ico">🛸</span><div><b>My ship / My character</b><span class="d">One click to your ship's page and your character's wiki bio</span></div></li>
+    <li><span class="ico">★</span><div><b>Personal pinned links</b><span class="d">Pin any wiki page or thread for one-click return</span></div></li>
+    <li><span class="ico">🔍</span><div><b>Unified search</b><span class="d">Federated: wiki, main site, sim archive, public forum archive, and access-scoped HQ pages — each source switches on as it gets a searchable endpoint</span></div></li>
+    <li><span class="ico">🔔</span><div><b>Notification badge</b><span class="d">Count of new sims on your ship (Discord mentions if a source exists)</span></div></li>
+    <li><span class="ico">💬</span><div><b>Glossary / acronym tooltips</b><span class="d">Hover an SB118 term for a definition — from a built-in dictionary, SB118 sites by default</span></div></li>
+    <li><span class="ico">📣</span><div><b>Latest announcements</b><span class="d">Recent HQ / fleet announcements in the popup</span></div></li>
+  </ul>
+
+  <h3>Staff extras <span class="tag staff">light up for admins</span></h3>
+  <ul class="feat">
+    <li><span class="ico">🗣</span><div><b>Forums</b><span class="d">Quick link to the staff Discourse (moved here — forums are staff-only now)</span></div></li>
+    <li><span class="ico">⚙️</span><div><b>Admin quick-links</b><span class="d">Authentik admin · n8n · Discourse admin · HQ panels</span></div></li>
+    <li><span class="ico">🧭</span><div><b>Member lookup</b><span class="d">Name / email / writer_id → resolved across HQ, forums, wiki, Authentik</span></div></li>
+    <li><span class="ico">🐛</span><div><b>Feedback / bug queue peek</b><span class="d">Open count + jump to the HQ feedback queue</span></div></li>
+  </ul>
+
+  <h3>Parked add-ons <span class="tag parked">easy, later</span></h3>
+  <ul class="feat">
+    <li><span class="ico">⌨️</span><div><b>Address-bar search</b><span class="d">Type <code>sb</code> + space in the URL bar, then a query</span></div></li>
+    <li><span class="ico">🖱</span><div><b>Right-click "Search SB118 wiki for…"</b><span class="d">On any selected text</span></div></li>
+  </ul>
+
+  <h2><span class="n">06</span>The HQ endpoints</h2>
+  <div class="card">
+    <p>Four new routes on the megatool, all behind Authentik. Three read-only; one narrow write that only advances your own "last seen" marker so the badge can clear.</p>
+    <p style="margin:14px 0 4px"><span class="endpoint">GET /api/me</span> &nbsp;<span class="tag core">Phase 1</span> — your profile, staff role, notification counts, announcements</p>
+    <p style="margin:4px 0"><span class="endpoint post">POST /api/me/seen</span> &nbsp;<span class="tag staff">Phase 3</span> — advance your own notification marker (the one exception to "no writes")</p>
+    <p style="margin:4px 0"><span class="endpoint">GET /api/staff/lookup</span> &nbsp;<span class="tag staff">Phase 4</span> — cross-system member lookup, staff-only (403 otherwise)</p>
+    <p style="margin:4px 0"><span class="endpoint">GET /api/staff/feedback-count</span> &nbsp;<span class="tag staff">Phase 4</span> — open feedback count, staff-only</p>
+  </div>
+  <p class="lead">What <code>/api/me</code> returns:</p>
+<pre><code>{
+  "authenticated": true,
+  "displayName": "Wolf",
+  "isStaff": true,
+  "staffRoles": ["ec", "training"],
+  "ship":      { "name": "USS Example", "wikiUrl": "…" },
+  "character": { "name": "…",           "wikiUrl": "…" },
+  "notifications": {
+    "sims":    { "count": 3, "latest": "sim_88123" },
+    "discord": { "count": 0, "latest": null },
+    "forum":   { "count": 2, "latest": "2026-07-24T10:00:00Z" }
+  },
+  "announcements": [ { "title": "Awards ceremony…", "url": "…" } ]
+}</code></pre>
+
+  <h2><span class="n">07</span>The build, in four phases</h2>
+  <p class="lead">Whole product is specced; we build it across sessions, backbone first.</p>
+  <div class="phase"><div class="num">1</div><div class="body"><b>Launcher + backbone.</b> Session-access spike → <code>/api/me</code> → extension skeleton, quick-launch, login light, my ship / my character, pinned links, staff tiering. Chromium + Firefox builds. <em>This is the useful thing on its own.</em></div></div>
+  <div class="phase"><div class="num">2</div><div class="body"><b>Search.</b> Unified search (wiki + forum archive; staff Discourse) with scope toggle. Plus the parked add-ons: address-bar and right-click search.</div></div>
+  <div class="phase"><div class="num">3</div><div class="body"><b>Awareness.</b> Announcements feed and the notification badge (sims first, other sources as they become available).</div></div>
+  <div class="phase"><div class="num">4</div><div class="body"><b>Flavor + staff power-tools.</b> Glossary tooltips, member lookup, feedback-queue peek.</div></div>
+
+  <h2><span class="n">08</span>Guardrails</h2>
+  <div class="grid2">
+    <div class="card"><h3 style="margin-top:0">Security</h3><p>No passwords, ever. Endpoints are Authentik-protected server-side — the popup's staff/member split is cosmetic, not a security boundary. No secrets in the bundle. Host permissions limited to SB118 domains by default.</p></div>
+    <div class="card"><h3 style="margin-top:0">Separation</h3><p>New repo under the <code>StarBase118</code> org. SB118 Authentik, SB118 infra, SB118 Cloudflare only. Nothing shared with CampaignHelp or MFC — SB118-only end to end.</p></div>
+  </div>
+  <div class="callout ok">
+    <h4>✓ Reviewed &amp; approved</h4>
+    <p>ChatGPT (gpt-5.5) reviewed the spec and returned <strong>Approved</strong> after four rounds tightening the endpoint contracts, the session/cookie mechanism, and the notification semantics. Both reviewers rate confidence <strong>Qualified</strong> — high for the Phase 1 launcher/backbone, qualified for later phases that depend on outside decisions (announcements source, Discord counts, sim-archive search, store ownership).</p>
+  </div>
+
+  <h2><span class="n">09</span>Open questions to settle as we go</h2>
+  <ul class="feat">
+    <li><span class="ico">①</span><div><b>Sim archive search</b><span class="d">Depends on the Aria→Postgres migration; omit that source until the endpoint exists</span></div></li>
+    <li><span class="ico">②</span><div><b>Discord mention counts</b><span class="d">Needs a bot/relay that reports per-user unread; badge uses sims only if unavailable</span></div></li>
+    <li><span class="ico">③</span><div><b>Announcements source</b><span class="d">Which HQ source <code>/api/me</code> reads — returns empty and hides the section until decided</span></div></li>
+    <li><span class="ico">④</span><div><b>Glossary dictionary refresh</b><span class="d">How often the static term list regenerates from the wiki glossary</span></div></li>
+    <li><span class="ico">⑤</span><div><b>Store ownership</b><span class="d">Which accounts publish to the Chrome, Edge, and Firefox stores — a dedicated SB118 dev account, not personal</span></div></li>
+    <li><span class="ico">⑥</span><div><b>Access-scoped HQ-pages search</b><span class="d">Depends on the hq-docs-engine exposing a permission-aware search; omitted from the box until then</span></div></li>
+  </ul>
+
+  <footer>
+    SB118 Browser Extension design spec · 2026-07-24 · companion to the committed <code>spec.md</code>.
+    Whole product specced; Phase 1 is the next planning target.
+  </footer>
+
+</div>
+</body>
+</html>

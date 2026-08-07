@@ -1,0 +1,13 @@
+blank_issues_enabled: false
+contact_links:
+  - name: How do I use this? / general questions
+    url: https://discord.gg/starbase118
+    about: Ask in Discord — you will get an answer faster there than in the tracker.
+
+  - name: A problem with an SB118 website (not the extension)
+    url: https://hq.starbase118.net/feedback/new
+    about: Wiki, HQ, the main site or the forums — report those through the fleet feedback form.
+
+  - name: Security vulnerability
+    url: https://github.com/StarBase118/sb118-browser-extension/security/advisories/new
+    about: Report privately, never as a public issue. See SECURITY.md.

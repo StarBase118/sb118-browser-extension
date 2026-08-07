@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SB118 popup — search results preview</title>
+<!--
+  Renders the Phase 2 search state against the REAL popup.css, so the styling
+  can be screenshot-checked without loading the extension. Markup here must
+  mirror what renderResults() in popup.ts builds.
+-->
+<link rel="stylesheet" href="../src/popup/popup.css">
+<style>
+  html{background:#eef1f6}
+  body{margin:24px auto;border:1px solid #1c2440;border-radius:14px;overflow:hidden;
+    box-shadow:0 18px 50px rgba(6,10,25,.4)}
+  /* preview only: show every group at once instead of the popup's scroll cap */
+  .results{max-height:none}
+</style>
+</head><body>
+<header id="ph"><span class="brand">🛰 StarBase 118</span><span id="login" class="light">Signed in</span></header>
+<div class="pin"><input id="search" value="vote" aria-label="Search SB118"></div>
+<div class="results">
+
+  <div class="r-group">
+    <div class="r-head"><span class="lbl">Go to</span></div>
+    <a class="r-hit sel" href="#"><span class="t">Votes</span><span class="s">Council</span></a>
+    <a class="r-hit" href="#"><span class="t">Open votes</span><span class="s">Council</span></a>
+  </div>
+
+  <div class="r-group">
+    <div class="r-head"><span class="lbl">Wiki</span><a class="r-seeall" href="#">See all →</a></div>
+    <a class="r-hit" href="#"><span class="t">Executive Council</span><span class="s">The Executive Council votes on fleet-wide policy, promotions to Captain, and the annual awards slate.</span></a>
+    <a class="r-hit" href="#"><span class="t">Constitution of StarBase 118</span><span class="s">Article IV describes how a vote is called and what quorum is required.</span></a>
+  </div>
+
+  <div class="r-group">
+    <div class="r-head"><span class="lbl">News</span><a class="r-seeall" href="#">See all →</a></div>
+    <a class="r-hit" href="#"><span class="t">Council vote opens on the 2026 charter</span><span class="s">Voting runs through the end of the month.</span></a>
+  </div>
+
+  <div class="r-group">
+    <div class="r-head"><span class="lbl">Sims</span></div>
+    <div class="r-note">Searching…</div>
+  </div>
+
+  <div class="r-group">
+    <div class="r-head"><span class="lbl">Forum</span><a class="r-seeall" href="#">See all →</a></div>
+    <div class="r-note warn">Forum unavailable</div>
+  </div>
+
+  <div class="r-note">No matches in pages.</div>
+
+</div>
+</body></html>

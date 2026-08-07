@@ -1,0 +1,75 @@
+name: Bug report
+description: Something in the extension is broken or behaving oddly.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. A few details up front save a round trip.
+
+        **If this is a security problem, please close this and follow
+        [SECURITY.md](https://github.com/StarBase118/sb118-browser-extension/blob/main/SECURITY.md)
+        instead** — do not describe it in a public issue.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you get instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the popup
+        2. Type "…" in the search box
+        3. …
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Chrome
+        - Edge
+        - Brave
+        - Firefox
+        - Other (say which below)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Extension version
+      description: Shown on your browser's extensions page (e.g. 0.1.0).
+    validations:
+      required: true
+
+  - type: dropdown
+    id: signed-in
+    attributes:
+      label: Were you signed in to HQ?
+      description: Several features only appear when you have an active session.
+      options:
+        - "Yes"
+        - "No"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: |
+        Screenshots help. So does the browser console — right-click the popup, choose
+        Inspect, and copy anything red from the Console tab.
+
+        **Please redact your email address and anything else personal from screenshots
+        and logs before posting them.**

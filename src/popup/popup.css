@@ -1,0 +1,78 @@
+:root{
+  --bg:#0d1120; --tile:#1a2348; --tile-hover:#24305c; --chip:#222c50;
+  --ink:#e7ecff; --muted:#93a1c9; --line:#28325a;
+  --gold:#d0a24a; --ok:#4ade80; --staff-accent:#6aa9ff;
+}
+*{box-sizing:border-box}
+body{width:360px;margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;font-size:13px}
+
+/* header */
+#ph{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;
+  background:linear-gradient(180deg,#18203c,#141a2e);border-bottom:1px solid var(--line);
+  box-shadow:inset 0 -2px 0 0 var(--gold)}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;letter-spacing:.2px}
+.light{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);
+  background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.28);
+  padding:3px 9px;border-radius:999px;cursor:default}
+.light::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok)}
+.light.off{background:rgba(148,161,201,.1);border-color:rgba(148,161,201,.25);cursor:pointer}
+.light.off::before{background:#6b7280;box-shadow:none}
+
+/* search */
+.pin{padding:12px 14px 4px}
+.pin input{width:100%;padding:9px 11px 9px 32px;border-radius:9px;border:1px solid #2a3563;
+  background-color:#0f1630;color:var(--ink);font-size:13px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%2393a1c9' stroke-width='2' stroke-linecap='round'><circle cx='6' cy='6' r='4.5'/><line x1='9.5' y1='9.5' x2='13' y2='13'/></svg>");
+  background-repeat:no-repeat;background-position:11px center}
+.pin input::placeholder{color:#6b7aa5}
+
+/* search results — replaces the launcher body while the query is non-empty */
+.results{padding:8px 14px 14px;max-height:420px;overflow-y:auto}
+.r-group{margin-top:15px}
+.r-group:first-child{margin-top:4px}
+.r-group + .r-note{margin-top:12px}
+.r-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+  padding:0 0 5px;border-bottom:1px solid #1c2544}
+.r-head .lbl{color:var(--muted)}
+.r-seeall{font-size:10.5px;color:var(--staff-accent);text-decoration:none}
+.r-seeall:hover{text-decoration:underline}
+.r-hit{display:block;padding:7px 8px;margin:2px -8px 0;border-radius:7px;
+  color:var(--ink);text-decoration:none;cursor:pointer}
+.r-hit:hover,.r-hit.sel{background:var(--tile-hover)}
+.r-hit .t{display:block;font-size:12.5px;font-weight:600;line-height:1.3}
+.r-hit .s{display:block;margin-top:2px;font-size:11.5px;color:var(--muted);line-height:1.35;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.r-note{padding:7px 0 2px;font-size:11.5px;color:var(--muted)}
+.r-note.warn{color:#e0a86a}
+.r-signin{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--muted)}
+.r-signin a{color:var(--staff-accent);text-decoration:none}
+
+/* quick-launch grid */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 14px 4px}
+.grid a{display:flex;flex-direction:column;align-items:center;gap:5px;
+  background:var(--tile);border:1px solid #232d55;border-radius:10px;padding:11px 4px;
+  color:var(--ink);text-decoration:none;font-size:11px;font-weight:500;transition:background .12s,transform .12s}
+.grid a:hover{background:var(--tile-hover);transform:translateY(-1px)}
+.grid a .ic{font-size:18px;line-height:1}
+
+/* sections */
+.sec{padding:12px 14px;border-top:1px solid var(--line)}
+.sec:first-of-type{border-top:0}
+.lbl{color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--chip);border:1px solid #2c3767;
+  border-radius:8px;padding:6px 11px;color:var(--ink);text-decoration:none;font-size:12.5px;transition:background .12s}
+.chip:hover{background:#2c3767}
+.x{margin-left:2px;background:none;border:0;color:var(--muted);cursor:pointer;font-size:12px;padding:0}
+
+/* announcements (Phase 3 populates; hidden while empty) */
+.announce{margin-top:9px;font-size:12.5px;color:#c3cdf0;line-height:1.4}
+.announce .a-item{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #1a2240}
+.announce .a-item:last-child{border-bottom:0}
+.announce .a-dot{color:var(--gold)}
+
+/* staff */
+.staff{background:linear-gradient(180deg,#0f1832,#0d142a);border-top:1px dashed #33406b}
+.staff .lbl{color:var(--staff-accent)}

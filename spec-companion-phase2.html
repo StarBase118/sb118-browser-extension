@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SB118 Extension — Phase 2 spec companion</title>
+<style>
+  :root {
+    --navy: #1d72a6;
+    --gold: #bb8a33;
+    --red: #a61e22;
+    --space: #05080f;
+    --ink: #1b1f28;
+    --muted: #5d6674;
+    --line: #dfe3ea;
+    --panel: #f6f8fb;
+    --white: #fff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: var(--white);
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px 96px; }
+
+  header.hero {
+    background: linear-gradient(160deg, var(--space) 0%, #0d1a2b 60%, #123049 100%);
+    color: #eef3f8;
+    padding: 56px 24px 48px;
+    margin-bottom: 48px;
+    border-bottom: 3px solid var(--gold);
+  }
+  header.hero .wrap { padding-bottom: 0; }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: .16em;
+    font-size: 12px;
+    color: var(--gold);
+    font-weight: 700;
+    margin: 0 0 14px;
+  }
+  header.hero h1 {
+    font-size: 40px;
+    line-height: 1.15;
+    margin: 0 0 16px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+  }
+  header.hero p {
+    margin: 0;
+    font-size: 19px;
+    color: #b9c8d8;
+    max-width: 62ch;
+  }
+  .meta {
+    margin-top: 28px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+    font-size: 14px;
+    color: #8fa3b8;
+  }
+  .meta b { color: #d6e2ee; font-weight: 600; }
+
+  h2 {
+    font-size: 27px;
+    margin: 56px 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--line);
+    font-weight: 700;
+    letter-spacing: -.01em;
+  }
+  h3 { font-size: 19px; margin: 32px 0 8px; font-weight: 700; }
+  p { margin: 0 0 16px; }
+  ul, ol { margin: 0 0 16px; padding-left: 22px; }
+  li { margin-bottom: 7px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .87em;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+  a { color: var(--navy); }
+
+  .lede { font-size: 19px; color: #333b47; }
+
+  /* diagram */
+  .diagram {
+    background: var(--space);
+    border-radius: 10px;
+    padding: 28px 24px;
+    margin: 24px 0 8px;
+    overflow-x: auto;
+  }
+  .diagram svg { display: block; min-width: 620px; width: 100%; height: auto; }
+  .cap { font-size: 14px; color: var(--muted); margin: 0 0 28px; }
+
+  /* source cards */
+  .cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin: 20px 0 28px; }
+  .card {
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--navy);
+    border-radius: 8px;
+    padding: 16px 18px;
+    background: var(--white);
+  }
+  .card.gold { border-left-color: var(--gold); }
+  .card.dim  { border-left-color: #97a3b3; }
+  .card h4 { margin: 0 0 6px; font-size: 16px; font-weight: 700; }
+  .card p { margin: 0; font-size: 15px; color: #444d5b; }
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 100px;
+    margin-bottom: 8px;
+  }
+  .tag.instant { background: #e8f4ea; color: #226b39; }
+  .tag.public  { background: #e9f1f8; color: #1d5c88; }
+  .tag.private { background: #f8eeea; color: #8d3626; }
+
+  /* callouts */
+  .callout {
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin: 24px 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+  }
+  .callout h4 { margin: 0 0 8px; font-size: 16px; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.warn { background: #fdf6ec; border-color: #f0ddb9; }
+  .callout.warn h4 { color: #8a5a12; }
+  .callout.fix { background: #eef5fa; border-color: #cfe0ee; }
+  .callout.fix h4 { color: #14567f; }
+
+  /* comparison */
+  .compare { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin: 22px 0 28px; }
+  .compare > div { border-radius: 8px; padding: 16px 18px; font-size: 15px; }
+  .compare .no { background: #fbf0f0; border: 1px solid #eed4d4; }
+  .compare .yes { background: #eef7f0; border: 1px solid #cfe5d6; }
+  .compare h4 { margin: 0 0 8px; font-size: 15px; }
+  .compare .no h4 { color: #8d2b2b; }
+  .compare .yes h4 { color: #235f38; }
+  .compare ul { margin: 0; padding-left: 18px; }
+  .compare li { font-size: 14.5px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 18px 0 26px; font-size: 15.5px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--panel); font-weight: 700; font-size: 13.5px; text-transform: uppercase; letter-spacing: .05em; color: #3d4654; }
+  .scroller { overflow-x: auto; }
+
+  /* tracks */
+  .track {
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .track:last-child { border-bottom: 0; }
+  .num {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px;
+  }
+  .track h4 { margin: 4px 0 4px; font-size: 17px; }
+  .track p { margin: 0; font-size: 15px; color: #4a5361; }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  @media (max-width: 620px) {
+    header.hero h1 { font-size: 30px; }
+    .compare { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">StarBase 118 · Browser extension</p>
+    <h1>Phase 2 — federated search</h1>
+    <p>One box that both takes you somewhere in HQ and finds things across the wiki, the main site, the sim archive, and the staff forum.</p>
+    <div class="meta">
+      <span><b>Date</b> 26 July 2026</span>
+      <span><b>Status</b> Design approved · spec review passed</span>
+      <span><b>Phase 1</b> Shipped 24 July</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<p class="lede">Phase 1 shipped the launcher and put a search box in the popup — greyed out. Phase 2 turns it on. The design goal was that the fast, always-useful thing (jumping to a page you have access to) never waits on a network request, and that nothing a member cannot open ever shows up in their results.</p>
+
+<h2>How it works</h2>
+
+<div class="diagram">
+<svg viewBox="0 0 660 300" role="img" aria-label="Diagram: typing in the popup triggers one local match and three parallel network calls">
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 z" fill="#8fa3b8"/>
+    </marker>
+    <marker id="arg" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 z" fill="#bb8a33"/>
+    </marker>
+  </defs>
+
+  <rect x="14" y="118" width="168" height="62" rx="8" fill="#122236" stroke="#2c4761"/>
+  <text x="98" y="143" text-anchor="middle" fill="#eef3f8" font-family="sans-serif" font-size="15" font-weight="700">you type “vote”</text>
+  <text x="98" y="163" text-anchor="middle" fill="#8fa3b8" font-family="sans-serif" font-size="12.5">popup · 200ms debounce</text>
+
+  <path d="M186,140 C 236,140 236,52 288,52" stroke="#bb8a33" stroke-width="2" fill="none" marker-end="url(#arg)"/>
+  <path d="M186,150 C 236,150 236,124 288,124" stroke="#8fa3b8" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+  <path d="M186,156 C 236,156 236,186 288,186" stroke="#8fa3b8" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+  <path d="M186,162 C 236,162 236,248 288,248" stroke="#8fa3b8" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+
+  <rect x="292" y="30" width="352" height="46" rx="7" fill="#1e2b1c" stroke="#4a6b3f"/>
+  <text x="308" y="52" fill="#b9e2b6" font-family="sans-serif" font-size="14" font-weight="700">Destinations</text>
+  <text x="308" y="68" fill="#8fb08c" font-family="sans-serif" font-size="12.5">cached from /api/me · no request · instant</text>
+
+  <rect x="292" y="102" width="352" height="46" rx="7" fill="#12202e" stroke="#2c4761"/>
+  <text x="308" y="124" fill="#cfe0ee" font-family="sans-serif" font-size="14" font-weight="700">Wiki</text>
+  <text x="308" y="140" fill="#8fa3b8" font-family="sans-serif" font-size="12.5">wiki.starbase118.net · public</text>
+
+  <rect x="292" y="164" width="352" height="46" rx="7" fill="#12202e" stroke="#2c4761"/>
+  <text x="308" y="186" fill="#cfe0ee" font-family="sans-serif" font-size="14" font-weight="700">Main site</text>
+  <text x="308" y="202" fill="#8fa3b8" font-family="sans-serif" font-size="12.5">news · pages · sim archive · public</text>
+
+  <rect x="292" y="226" width="352" height="46" rx="7" fill="#2a1a1c" stroke="#6b3f43"/>
+  <text x="308" y="248" fill="#e8c3c5" font-family="sans-serif" font-size="14" font-weight="700">Staff forum</text>
+  <text x="308" y="264" fill="#b08c8f" font-family="sans-serif" font-size="12.5">via HQ · staff only · scoped per member</text>
+</svg>
+</div>
+<p class="cap">Four sources, three network calls. Each group renders the moment it lands — a slow forum query never holds up wiki results.</p>
+
+<div class="cards">
+  <div class="card gold">
+    <span class="tag instant">instant</span>
+    <h4>Destinations</h4>
+    <p>Type “vote”, get Votes, Voting guide, Vote archive. Matched locally against the page list HQ already sent, so there is no request at all.</p>
+  </div>
+  <div class="card">
+    <span class="tag public">public</span>
+    <h4>Wiki</h4>
+    <p>MediaWiki's own search, queried straight from the extension. Verified working anonymously — no auth, no new backend.</p>
+  </div>
+  <div class="card">
+    <span class="tag public">public</span>
+    <h4>Main site</h4>
+    <p>Community news, site pages, and the sim archive as three separate groups. One new public route on the Payload site.</p>
+  </div>
+  <div class="card dim">
+    <span class="tag private">staff</span>
+    <h4>Staff forum</h4>
+    <p>Queried through HQ rather than directly, so the staff gate is enforced on the server and results are already scoped to that person.</p>
+  </div>
+</div>
+
+<div class="callout fix">
+  <h4>The sim archive came free</h4>
+  <p>The original design deferred sim search until the Aria migration landed. It has landed — sims are already searchable on the main site, running on Postgres. That deferral was stale, so the biggest body of content SB118 has is in scope from day one.</p>
+</div>
+
+<h2>The one real decision</h2>
+
+<p>Everything else follows from how the private source gets queried. Two options were on the table, and the trade-off is about where the staff gate lives.</p>
+
+<div class="compare">
+  <div class="no">
+    <h4>Extension queries Discourse directly</h4>
+    <ul>
+      <li>Depends on the forum session cookie riding along on a cross-site request — behaves differently in Chrome and Firefox</li>
+      <li>The staff gate becomes a decision the client makes</li>
+      <li>Needs a spike before we can even plan it</li>
+    </ul>
+  </div>
+  <div class="yes">
+    <h4>HQ queries Discourse on your behalf ✓</h4>
+    <ul>
+      <li>No cookie involved, so both browsers behave identically</li>
+      <li>The server returns nothing to a non-staff caller, whatever the client does</li>
+      <li>HQ already holds the forum credentials and already reaches it internally</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout warn">
+  <h4>A correction worth recording</h4>
+  <p>An earlier read of this held that Discourse's missing CORS headers made a direct fetch impossible. That was wrong — an extension bypasses CORS for hosts in its permissions, which is exactly how Phase 1's fetch to HQ worked. CORS is not why we proxy. The three reasons above are, and they hold up on their own.</p>
+</div>
+
+<h2>What gets built on the server</h2>
+
+<h3>1. <code>/api/me</code> gains a page list</h3>
+<p>Each member's response carries the HQ pages they are allowed to see. The extension caches it and matches against it locally.</p>
+<p>The filter must reuse the same path-matching the middleware already uses. HQ's route gating defaults to open, and a second, hand-written matcher is the single most likely way this feature would list a page someone cannot open. The cache is also cleared whenever the session is not authenticated, so signing out cannot leave yesterday's page list sitting in the popup.</p>
+
+<h3>2. New forum search route on HQ</h3>
+<p>Staff only. It finds the caller's forum account by email — both systems provision from Authentik, so they match — then asks Discourse for results <em>as that person</em>, which means the scoping is Discourse's own rather than something we reimplement. Everyone else gets an empty response, not an error.</p>
+
+<h3>3. New search route on the main site</h3>
+<p>Public. Returns news, pages, and sims. Posts and pages come from Payload; sims reuse the search function already powering <code>/sims/search</code>.</p>
+
+<h2>How it behaves</h2>
+
+<div class="scroller">
+<table>
+  <tr><th>Situation</th><th>What happens</th></tr>
+  <tr><td>You type one character</td><td>Destinations match immediately; network sources wait for a second character so a single keystroke never fires three requests</td></tr>
+  <tr><td>You keep typing</td><td>In-flight requests are cancelled, so a slow answer to an old query can't overwrite a newer one</td></tr>
+  <tr><td>The wiki is slow or down</td><td>That group alone says unavailable after 5 seconds. Everything else still renders</td></tr>
+  <tr><td>You're signed out</td><td>Wiki, news, pages and sims all still work. Destinations and forum are simply absent, with a quiet sign-in line</td></tr>
+  <tr><td>You're not staff</td><td>The forum group never appears, and the server would return nothing even if it were asked</td></tr>
+  <tr><td>You press Ctrl+Shift+S</td><td>Popup opens with the search box focused</td></tr>
+</table>
+</div>
+
+<h2>Four tracks, shipped independently</h2>
+
+<p>Phase 2 is a label for this body of work, not a release bundle. Nothing waits for everything else.</p>
+
+<div class="track">
+  <div class="num">1</div>
+  <div>
+    <h4>HQ (megatool)</h4>
+    <p>The page list and the forum route. This is the prerequisite for the most valuable group and carries the only real access-control risk in the phase — so it's the first plan.</p>
+  </div>
+</div>
+<div class="track">
+  <div class="num">2</div>
+  <div>
+    <h4>Main site</h4>
+    <p>The public search route. Independent of track 1.</p>
+  </div>
+</div>
+<div class="track">
+  <div class="num">3</div>
+  <div>
+    <h4>Extension</h4>
+    <p>The search UI itself. Works against whichever routes exist, degrading per-source for those that don't — so it can start before the others finish.</p>
+  </div>
+</div>
+<div class="track">
+  <div class="num">4</div>
+  <div>
+    <h4>Making the repo public</h4>
+    <p>History audit first, then license, issue templates for bugs and feature ideas, README with install instructions, docs, and tagged releases carrying both browser builds. Shares no code with the rest — a search bug shouldn't hold this up, and vice versa.</p>
+  </div>
+</div>
+
+<h2>What we test</h2>
+
+<p>Most of the test surface is ordinary, but two cases are the ones that would actually leak something, so they're called out explicitly in the spec:</p>
+
+<ul>
+  <li>A plain member with no staff groups gets only their own pages back from <code>/api/me</code></li>
+  <li>The forum route returns nothing to a non-staff caller — asserted against the route directly, so the client's own gating isn't what makes the test pass</li>
+</ul>
+
+<p>Beyond that: result normalization per source, the cancel-on-new-keystroke behavior, per-source failure isolation, and a two-browser smoke test signed in and signed out. That last one also clears the Firefox check left open from Phase 1.</p>
+
+<h2>Still open</h2>
+
+<ul>
+  <li><b>Store accounts</b> — Chrome Web Store, Edge and AMO should publish under a dedicated SB118 developer account rather than a personal one. Carried over from Phase 1. Blocks store publication, but not the public repo or install-from-source.</li>
+  <li><b>Ship wiki URL</b> — still empty in <code>/api/me</code>; unrelated to search, still open from Phase 1.</li>
+</ul>
+
+<p>Deliberately <em>not</em> in Phase 2: the open-vote notification badge. It's cheap — HQ already knows who's eligible and who hasn't voted — and it's the first slice of Phase 3.</p>
+
+<footer>
+  Companion to <code>docs/superpowers/specs/2026-07-26-sb118-extension-phase2-search-design.md</code> in <code>StarBase118/sb118-browser-extension</code>. The spec is the authority; this page is the readable version.
+</footer>
+
+</div>
+</body>
+</html>

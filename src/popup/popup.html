@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="popup.css">
+<title>StarBase 118</title>
+</head><body>
+<header id="ph"><span class="brand">🛰 StarBase 118</span><span id="login" class="light" title="Login status">Signed in</span></header>
+<div class="pin"><input id="search" placeholder="Search SB118…" autocomplete="off" spellcheck="false" aria-label="Search SB118" aria-controls="results"></div>
+<div id="results" class="results" role="listbox" hidden></div>
+<div id="launcher">
+  <nav id="grid" class="grid" aria-label="Quick launch"></nav>
+  <section id="mystuff" class="sec" hidden><span class="lbl">My stuff</span><div id="mychips" class="chips"></div></section>
+  <section id="pins" class="sec"><span class="lbl">Pinned</span><div id="pinchips" class="chips"></div></section>
+  <section id="announce" class="sec" hidden><span class="lbl">Announcements</span><div id="annlist" class="announce"></div></section>
+  <section id="staff" class="sec staff" hidden><span class="lbl">Staff</span><div id="staffgrid" class="chips"></div></section>
+  <section id="feedback" class="sec"><div class="chips"><button id="report-issue" type="button" class="chip">🐞 Report an issue on this page</button></div></section>
+</div>
+<script type="module" src="popup.js"></script>
+</body></html>

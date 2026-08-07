@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "StarBase 118",
+  "version": "0.1.0",
+  "description": "Quick access to StarBase 118 — HQ, wiki, Discord, and your ship & character.",
+  "action": { "default_popup": "popup/popup.html", "default_title": "StarBase 118" },
+  "background": { "scripts": ["background.js"], "type": "module" },
+  "permissions": ["storage", "tabs"],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": { "default": "Ctrl+Shift+S", "mac": "Command+Shift+S" },
+      "description": "Open StarBase 118 search"
+    }
+  },
+  "host_permissions": [
+    "https://hq.starbase118.net/*",
+    "https://wiki.starbase118.net/*",
+    "https://staff.starbase118.net/*"
+  ],
+  "options_ui": { "page": "options/options.html", "open_in_tab": true },
+  "browser_specific_settings": { "gecko": { "id": "sb118-extension@starbase118.net", "strict_min_version": "128.0" } },
+  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+}

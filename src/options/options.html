@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="options.css">
+<title>StarBase 118 — options</title>
+</head><body>
+<h1>StarBase 118 — options</h1>
+<form id="prefs">
+  <label>Your character's wiki page (used only if HQ doesn't provide one)
+    <input type="url" id="char" placeholder="https://wiki.starbase118.net/wiki/...">
+  </label>
+  <label>Your ship's wiki page (used only if HQ doesn't provide one)
+    <input type="url" id="ship" placeholder="https://wiki.starbase118.net/wiki/...">
+  </label>
+  <button type="submit">Save</button>
+  <span id="saved" class="saved" hidden>Saved ✓</span>
+</form>
+<h2>Pinned links</h2>
+<ul id="pinlist"></ul>
+<script type="module" src="options.js"></script>
+</body></html>
