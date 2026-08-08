@@ -358,4 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
   wireReportIssue()
   wireSearch()
   Promise.all([renderPins(), personalize()])
+  void browser.runtime.sendMessage({ type: 'notif:seen' }).catch(() => {
+    // The worker may be asleep; the next alarm reconciles storage and badge.
+  })
 })
