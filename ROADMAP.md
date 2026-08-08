@@ -8,9 +8,21 @@ _Last updated: 2026-08-08._
 destinations, wiki, main site (news + pages + sims), and staff Discourse. Nothing in Phase 2
 is outstanding.
 
-Next up is **Phase 3 — awareness**: the announcements feed and the notification badge (sims
-first), backed by `POST /api/me/seen`. The popup already renders an Announcements section,
-hidden behind a flag until this ships.
+Next up is **Phase 3 — awareness**: a toolbar badge fed by three switchable sources.
+**Design spec written 2026-08-08 and scope confirmed by Jordan** —
+`docs/superpowers/specs/2026-08-08-sb118-extension-phase3-awareness-design.md`
+(readable companion: `spec-companion-phase3.html` in this repo). Start with slice 1.
+
+- **Announcements** — human posts only in Discord `📣announcements` (39 of the last 50
+  messages there are webhook/bot noise; the filter is the feature)
+- **Sims** — on any ship the member has a placement on, excluding ones they wrote
+- **News** — the public Community News RSS feed at `www.starbase118.net/feed`
+- **Per-source toggles**, plus a one-time explainer the first time the badge is non-zero
+
+**`POST /api/me/seen` from the Phase 1 design is cancelled.** The endpoint returns recent
+items rather than counts, and the extension keeps its own last-seen markers in
+`storage.local` — no new table, no mutating route, no CSRF surface. The trade is that badge
+state is per-browser and does not sync.
 
 Two Phase 1 verifications are still open and worth doing first — see
 "Remaining Phase 1 verification" below.

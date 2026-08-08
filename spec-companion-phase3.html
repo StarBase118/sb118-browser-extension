@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SB118 Extension — Phase 3 (awareness) spec</title>
+<style>
+  :root {
+    --gutter: 1.5rem;
+    --inset: 1.7rem;
+    --ink: #16202e;
+    --ink-soft: #4c5a6d;
+    --ink-faint: #6c7a8c;
+    --rule: #dfe5ec;
+    --paper: #f6f8fa;
+    --card: #ffffff;
+    --navy: #10243f;
+    --navy-soft: #1d3a5f;
+    --accent: #b8860b;
+    --good: #1f7a4d;
+    --warn: #a04a10;
+    --stop: #9b2226;
+    --code-bg: #f0f3f7;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 400 17px/1.65 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 58rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+  }
+
+  /* Header text must line up with the text INSIDE the cards, not the card edge. */
+  header { background: var(--navy); color: #eef3f9; padding-top: 2.75rem; padding-bottom: 2.5rem; }
+  header .wrap {
+    padding-left: calc(var(--gutter) + var(--inset));
+    padding-right: calc(var(--gutter) + var(--inset));
+  }
+  header .eyebrow {
+    font: 600 0.72rem/1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #8fb0d6;
+    margin: 0 0 0.85rem;
+  }
+  header h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 0.7rem; font-weight: 600; }
+  header p { margin: 0; color: #b9cbe0; font-size: 1.02rem; max-width: 40rem; }
+
+  main.wrap { padding-top: 3.25rem; padding-bottom: 5rem; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 1.5rem var(--inset) 1.7rem;
+    margin-bottom: 1.5rem;
+  }
+
+  h2 {
+    font-size: 1.35rem;
+    font-weight: 600;
+    margin: 0 0 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 2px solid var(--rule);
+    letter-spacing: -0.01em;
+  }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.75rem 0 0.6rem; color: var(--navy-soft); }
+  h3:first-of-type { margin-top: 0.5rem; }
+  p { margin: 0 0 1rem; }
+  p:last-child, ul:last-child, table:last-child { margin-bottom: 0; }
+  ul, ol { margin: 0 0 1rem; padding-left: 1.3rem; }
+  li { margin-bottom: 0.45rem; }
+  strong { font-weight: 600; }
+  a { color: var(--navy-soft); }
+
+  code {
+    font: 0.86em/1.5 ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    background: var(--code-bg);
+    padding: 0.1em 0.36em;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    margin: 0 0 1.2rem;
+  }
+  pre code { background: none; padding: 0; font-size: 0.82rem; line-height: 1.6; }
+
+  .scroll { overflow-x: auto; margin-bottom: 1.2rem; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.94rem; }
+  th, td { text-align: left; padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th {
+    font: 600 0.72rem/1.3 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border-bottom: 2px solid var(--rule);
+  }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .note {
+    border-left: 4px solid var(--accent);
+    background: #fdf8ec;
+    padding: 0.9rem 1.1rem;
+    border-radius: 0 8px 8px 0;
+    margin: 0 0 1.2rem;
+    font-size: 0.96rem;
+  }
+  .note.stop { border-left-color: var(--stop); background: #fdf1f1; }
+  .note.good { border-left-color: var(--good); background: #f0f8f3; }
+  .note p:last-child { margin-bottom: 0; }
+  .note .lbl {
+    display: block;
+    font: 600 0.7rem/1 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--warn);
+    margin-bottom: 0.45rem;
+  }
+  .note.stop .lbl { color: var(--stop); }
+  .note.good .lbl { color: var(--good); }
+
+  figure { margin: 0 0 1.3rem; }
+  figure svg { display: block; width: 100%; height: auto; }
+  figcaption {
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    margin-top: 0.6rem;
+    font-style: italic;
+  }
+
+  .slices { list-style: none; padding: 0; margin: 0; counter-reset: slice; }
+  .slices li {
+    counter-increment: slice;
+    position: relative;
+    padding-left: 2.6rem;
+    margin-bottom: 1.1rem;
+  }
+  .slices li::before {
+    content: counter(slice);
+    position: absolute;
+    left: 0; top: 0.05rem;
+    width: 1.8rem; height: 1.8rem;
+    border-radius: 50%;
+    background: var(--navy);
+    color: #fff;
+    font: 600 0.85rem/1.8rem ui-sans-serif, system-ui, sans-serif;
+    text-align: center;
+  }
+  .slices .t { font-weight: 600; display: block; }
+  .slices .d { color: var(--ink-soft); font-size: 0.96rem; }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    margin-top: 2.5rem;
+    padding-top: 1.4rem;
+    font-size: 0.88rem;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 40rem) {
+    :root { --gutter: 1rem; --inset: 1.1rem; }
+    body { font-size: 16px; }
+    header h1 { font-size: 1.65rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <p class="eyebrow">StarBase 118 browser extension</p>
+    <h1>Phase 3 — awareness</h1>
+    <p>A toolbar badge fed by three sources, each one switchable off. The first thing that makes the extension worth leaving installed.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="card">
+    <h2>What this is</h2>
+    <p>Phases 1 and 2 made the extension a faster way to reach pages you were going to reach anyway. Phase 3 is different: a number on the toolbar icon is what makes someone open the popup <em>unprompted</em>.</p>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>Source</th><th>What counts as new</th><th>Where it comes from</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Announcements</strong></td>
+            <td>A <strong>human</strong> post in Discord <code>📣announcements</code></td>
+            <td>Discord REST, read by the <code>ClaudeCode</code> bot, server-side</td>
+          </tr>
+          <tr>
+            <td><strong>Sims</strong></td>
+            <td>A sim on any ship you have a placement on, that you did not write</td>
+            <td>HQ Postgres, via <code>listShipSims()</code></td>
+          </tr>
+          <tr>
+            <td><strong>News</strong></td>
+            <td>An item in the Community News feed</td>
+            <td><code>www.starbase118.net/feed</code> (public RSS)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Deliberately out of scope:</strong> Discord mention counts (they need a per-user relay that doesn't exist), forum activity, and any kind of desktop or push notification. The badge is the only alert surface.</p>
+  </section>
+
+  <section class="card">
+    <h2>How it fits together</h2>
+    <p>One new endpoint on HQ. All the state lives in your browser.</p>
+
+    <figure>
+      <svg viewBox="0 0 760 330" role="img" aria-label="Architecture: the extension service worker polls one HQ endpoint every 15 minutes; HQ fans out to Discord, Postgres and the RSS feed.">
+        <defs>
+          <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto">
+            <path d="M0,0 L8,3.2 L0,6.4 z" fill="#5b6b7d"/>
+          </marker>
+        </defs>
+        <style>
+          .bx { fill:#fff; stroke:#c6d0dc; stroke-width:1.5; rx:8; }
+          .bx-hq { fill:#10243f; stroke:#10243f; }
+          .lb { font:600 13px ui-sans-serif,system-ui,sans-serif; fill:#16202e; }
+          .lb-w { font:600 13px ui-sans-serif,system-ui,sans-serif; fill:#ffffff; }
+          .sm { font:400 11px ui-monospace,Menlo,monospace; fill:#5b6b7d; }
+          .sm-w { font:400 11px ui-monospace,Menlo,monospace; fill:#a8c0dc; }
+          .ln { stroke:#5b6b7d; stroke-width:1.5; fill:none; marker-end:url(#ar); }
+        </style>
+
+        <rect class="bx" x="250" y="12" width="260" height="58"/>
+        <text class="lb" x="380" y="36" text-anchor="middle">Extension service worker</text>
+        <text class="sm" x="380" y="55" text-anchor="middle">src/background.ts — alarm every 15 min</text>
+
+        <line class="ln" x1="380" y1="70" x2="380" y2="112"/>
+        <text class="sm" x="392" y="95">GET /api/me/notifications?sources=…</text>
+
+        <rect class="bx bx-hq" x="250" y="115" width="260" height="58"/>
+        <text class="lb-w" x="380" y="139" text-anchor="middle">HQ (megatool)</text>
+        <text class="sm-w" x="380" y="158" text-anchor="middle">aggregates 3 sources, returns items</text>
+
+        <path class="ln" d="M310,173 L310,200 L130,200 L130,232"/>
+        <path class="ln" d="M380,173 L380,232"/>
+        <path class="ln" d="M450,173 L450,200 L630,200 L630,232"/>
+
+        <rect class="bx" x="30" y="235" width="200" height="62"/>
+        <text class="lb" x="130" y="259" text-anchor="middle">Discord</text>
+        <text class="sm" x="130" y="277" text-anchor="middle">📣announcements</text>
+
+        <rect class="bx" x="280" y="235" width="200" height="62"/>
+        <text class="lb" x="380" y="259" text-anchor="middle">HQ Postgres</text>
+        <text class="sm" x="380" y="277" text-anchor="middle">sim archive</text>
+
+        <rect class="bx" x="530" y="235" width="200" height="62"/>
+        <text class="lb" x="630" y="259" text-anchor="middle">Main site</text>
+        <text class="sm" x="630" y="277" text-anchor="middle">/feed (RSS)</text>
+
+        <text class="sm" x="130" y="318" text-anchor="middle">bot token — server only</text>
+        <text class="sm" x="380" y="318" text-anchor="middle">scoped to your ships</text>
+        <text class="sm" x="630" y="318" text-anchor="middle">public</text>
+      </svg>
+      <figcaption>The endpoint returns recent <em>items</em>, not counts. The extension counts locally against its own last-seen marker.</figcaption>
+    </figure>
+
+    <h3>Why the aggregation is server-side</h3>
+    <p>The Discord bot token decides it. An extension's code is public — anyone who installs it can read it — so a bot token can never ship inside one. Sims need HQ's database regardless. Only the RSS feed could have been fetched client-side, and splitting one source out buys nothing but a second thing that can fail.</p>
+
+    <h3>Why there is no <code>POST /api/me/seen</code></h3>
+    <p>The original Phase 1 design put last-seen markers in HQ's database. <strong>That route is cancelled.</strong> Returning items instead of counts means the server needs no per-member state at all: no new table, no mutating route, no CSRF surface, no migration.</p>
+    <div class="note">
+      <span class="lbl">The trade, stated plainly</span>
+      <p>Badge state is <strong>per-browser and does not sync</strong>. Read an announcement on your laptop and your desktop badge still shows it. For a launcher extension that seems right — the badge is a property of "this browser I'm sitting at", not of the member. If sync is ever wanted, the endpoint doesn't change; a <code>seen</code> route gets added alongside it.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>The announcements filter is the whole feature</h2>
+    <p>The <code>📣announcements</code> channel is mostly automated. Measured against the most recent 50 messages on 8 August 2026:</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Kind</th><th class="num">Count</th></tr></thead>
+        <tbody>
+          <tr><td>Webhook posts (Dyno 29, Claude Code 7, Claude 3)</td><td class="num">39</td></tr>
+          <tr><td>Bot user posts (<code>ClaudeCode</code>)</td><td class="num">3</td></tr>
+          <tr><td>System messages (<code>type: 8</code>, member join)</td><td class="num">1</td></tr>
+          <tr><td>Human posts with no text body</td><td class="num">1</td></tr>
+          <tr><td><strong>Genuine human announcements</strong></td><td class="num"><strong>~4</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Four real announcements across roughly two weeks. Badging all fifty would make the number meaningless within a week — which is why the filter, not the plumbing, is the part that decides whether this feature is any good.</p>
+
+    <p>Keep a message only when <strong>all four</strong> hold:</p>
+    <ol>
+      <li><code>webhook_id</code> is absent</li>
+      <li><code>author.bot !== true</code></li>
+      <li><code>type</code> is <code>0</code> (default) or <code>19</code> (reply)</li>
+      <li>it has non-empty <code>content</code>, or at least one attachment or embed</li>
+    </ol>
+
+    <p>The title is the first non-empty line, Markdown stripped, truncated to 90 characters on a word boundary. Mention tokens (<code>&lt;@…&gt;</code>, <code>@everyone</code>) come out — a badge title is not the place to re-render a ping.</p>
+
+    <div class="note">
+      <span class="lbl">Two credential facts</span>
+      <p><code>SB118_DISCORD_BOT_TOKEN</code> exists in <code>~/.secrets.env</code> but is <strong>not</strong> in the Ansible vault or the megatool container yet — that's part of slice 3. And there are <strong>two bots named <code>ClaudeCode</code></strong> in the guild; only <code>1478760290161266921</code> matches the token. Confirm with <code>GET /users/@me</code> before assuming a permission grant applies to the right one.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Sims — "ships you play on"</h2>
+    <ol>
+      <li>Resolve the caller's <code>writer_id</code> from the session.</li>
+      <li>Read <strong>all</strong> their <code>writer_ids</code> rows — a row is a <em>placement</em>, so several placements means several rows. Join on the <code>writer_id</code> <strong>string</strong>, never <code>writer_ids.member_id</code> (a junk Links field).</li>
+      <li>Take the distinct ship names, canonicalized.</li>
+      <li>Fetch each ship's recent sims, merge, sort newest-first.</li>
+      <li><strong>Drop sims the caller wrote</strong>, as author or co-author. Nobody needs a badge for their own post.</li>
+    </ol>
+
+    <div class="note">
+      <span class="lbl">Two deliberate divergences from the Fleet Status count rules</span>
+      <p><strong>Part-time placements are included.</strong> Fleet Status excludes them; here a writer wants sims from every ship they actually play on.</p>
+      <p><strong>A member on LOA with zero placements gets an empty list, not "unavailable."</strong> Having no placement is a legitimate state, not a failure — the same trap behind the <code>/loa/[id]</code> 500 in July.</p>
+    </div>
+
+    <div class="note stop">
+      <span class="lbl">Verify before coding</span>
+      <p>The exact predicate for "active placement" must be checked against the live <code>writer_ids</code> schema. <code>awards-roster-snapshot.ts</code> is the reference for how placement rows are read today, and it filters on <code>is_primary</code> only. Don't assume a status column exists on <code>writer_ids</code> — member status lives on <code>members</code>.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>The endpoint</h2>
+    <p><code>GET /api/me/notifications</code> — Authentik session required, <strong>not</strong> staff-gated. Every member gets this.</p>
+
+    <p>The gate lives in the handler, because <code>/api/me/*</code> sits outside the middleware matcher — exactly as <code>/api/me</code> and <code>/api/search/forum</code> do. The path also goes into <code>MEMBER_SAFE_ROUTES</code> in the route-firewall test, which is what caught the same omission on the forum route.</p>
+
+<pre><code>{
+  "sources": {
+    "announcements": {
+      "items": [
+        {
+          "id":    "1398…",
+          "title": "Sal Taybrim has been promoted to Rear Admiral",
+          "url":   "https://discord.com/channels/…/…/1398…",
+          "at":    "2026-07-28T12:48:15.025Z"
+        }
+      ],
+      "unavailable": false
+    },
+    "sims": { "items": [ … ], "unavailable": false },
+    "news": { "items": [ … ], "unavailable": false }
+  }
+}</code></pre>
+
+    <div class="note good">
+      <span class="lbl">unavailable is load-bearing</span>
+      <p>A source that fails or times out returns <code>{ items: [], unavailable: true }</code> — never a bare empty list. An empty list means "we looked and there's nothing new." <code>unavailable</code> means "we couldn't look." Collapse the two and a Discord outage reads as a quiet fleet.</p>
+    </div>
+
+    <p>Each source gets a 4-second timeout and they run in parallel, so one slow source can't hold the other two. Announcements cache for 5 minutes and news for 10 — without that, forty members polling every quarter hour is forty identical requests to the same channel.</p>
+  </section>
+
+  <section class="card">
+    <h2>The badge, and turning it off</h2>
+
+    <h3>Counting</h3>
+    <p><code>storage.local</code> holds a last-seen timestamp per source. A source's count is however many returned items are newer than that. No marker yet means everything counts, so a fresh install shows what's genuinely recent rather than a misleading zero.</p>
+    <p>The badge shows the total across <strong>enabled</strong> sources, blank at zero, <code>9+</code> above nine. Opening the popup marks every displayed source as seen and clears it. Markers only move forward, so a slow poll can't resurrect a badge you already cleared.</p>
+
+    <h3>Toggles</h3>
+    <p>Three checkboxes on the options page, all on by default. <strong>A disabled source isn't requested at all</strong> — it drops out of the query string, so switching it off removes the work rather than hiding the number.</p>
+
+    <div class="note good">
+      <span class="lbl">The first-run note</span>
+      <p>The first time the badge shows a non-zero count, the popup shows a one-time, dismissible line explaining what the number counts and that any of the three sources can be switched off, linking straight to the options page.</p>
+      <p>On the first <em>non-zero badge</em>, not on install — explaining a number someone hasn't seen yet is just noise.</p>
+    </div>
+
+    <div class="note">
+      <span class="lbl">MV3 gotcha</span>
+      <p>Service workers get terminated aggressively. Alarms survive that; in-memory variables don't. <strong>All state goes in <code>storage.local</code></strong> — never a module-level variable.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Slices</h2>
+    <p>Each one ships and gets verified on its own. Slices 1–3 are independent — the extension renders any source that isn't live yet as "unavailable", which is the designed degradation, not a bug.</p>
+    <ol class="slices">
+      <li><span class="t">HQ endpoint — news only</span><span class="d">Public source, no new credential. The smallest possible first cut of the route, the envelope, and the firewall entry.</span></li>
+      <li><span class="t">HQ endpoint — sims</span><span class="d">Placement fan-out, canonical ship names, self-authored exclusion.</span></li>
+      <li><span class="t">HQ endpoint — announcements</span><span class="d">Needs the Discord bot token in the vault and the secrets role. Remember <code>--tags secrets</code> runs <em>before</em> the deploy script, which only runs <code>--tags megatool</code>.</span></li>
+      <li><span class="t">Extension — badge</span><span class="d">Alarm, poll, storage markers, badge text, clear on popup open.</span></li>
+      <li><span class="t">Extension — toggles and the first-run note</span><span class="d">Options checkboxes, narrowing the request, the one-time explainer.</span></li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2>Still open</h2>
+    <ul>
+      <li><strong>Badge colour</strong> — take it from the SB118 brand reference, don't invent one.</li>
+      <li><strong>The <code>writer_ids</code> active-placement predicate</strong> — verify against the live schema before slice 2.</li>
+      <li><strong>The 15-minute poll interval</strong> — a guess balancing freshness against Discord's rate limits. Worth revisiting after the pilot; it's one constant.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Full spec: <code>docs/superpowers/specs/2026-08-08-sb118-extension-phase3-awareness-design.md</code> · Written 8 August 2026
+  </footer>
+
+</main>
+
+</body>
+</html>
