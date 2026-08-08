@@ -2,11 +2,13 @@ import browser from 'webextension-polyfill'
 import { MEMBER_LINKS, STAFF_LINKS } from '@/lib/launcher'
 import { getPins, addPin, removePin } from '@/lib/pins'
 import { getProfile } from '@/lib/session'
-import { getPrefs } from '@/lib/prefs'
+import { getPrefs, setPrefs } from '@/lib/prefs'
 import { buildFeedbackUrl } from '@/lib/feedback-link'
 import { getNav, syncNavCache } from '@/lib/nav-cache'
 import { destinationGroup } from '@/lib/destinations'
 import { runSearch, pendingSources, type SearchContext } from '@/lib/search'
+import { getCachedCount } from '@/lib/notifications-store'
+import { SOURCE_LABELS as NOTIF_SOURCE_LABELS } from '@/lib/notifications-types'
 import {
   DEBOUNCE_MS,
   SOURCE_LABELS,
@@ -288,6 +290,43 @@ function wireSearch() {
   input.focus()
 }
 
+async function renderNotificationIntro() {
+  const count = await getCachedCount()
+  const prefs = await getPrefs()
+
+  // Wait for the first non-zero badge before explaining it; showing this on
+  // install would describe a number the member has not seen yet.
+  if (count <= 0 || prefs.notifIntroDismissed === true) return
+
+  const box = document.getElementById('notif-intro')!
+  box.innerHTML = ''
+
+  const text = document.createElement('span')
+  text.textContent = `The badge counts new ${NOTIF_SOURCE_LABELS.announcements}, ${NOTIF_SOURCE_LABELS.sims}, and ${NOTIF_SOURCE_LABELS.news}. You can switch any source off in `
+
+  const options = document.createElement('a')
+  options.href = '#'
+  options.textContent = 'notification settings'
+  options.addEventListener('click', async (e) => {
+    e.preventDefault()
+    await browser.runtime.openOptionsPage()
+  })
+
+  const suffix = document.createElement('span')
+  suffix.textContent = '.'
+
+  const dismiss = document.createElement('button')
+  dismiss.type = 'button'
+  dismiss.textContent = 'Dismiss'
+  dismiss.addEventListener('click', async () => {
+    await setPrefs({ notifIntroDismissed: true })
+    box.hidden = true
+  })
+
+  box.append(text, options, suffix, dismiss)
+  box.hidden = false
+}
+
 /* ----------------------------------------------------------- launcher UI */
 
 async function personalize() {
@@ -358,4 +397,9 @@ document.addEventListener('DOMContentLoaded', () => {
   wireReportIssue()
   wireSearch()
   Promise.all([renderPins(), personalize()])
+  void renderNotificationIntro().finally(() => {
+    void browser.runtime.sendMessage({ type: 'notif:seen' }).catch(() => {
+      // The worker may be asleep; the next alarm reconciles storage and badge.
+    })
+  })
 })

@@ -49,6 +49,15 @@ body{width:360px;margin:0;background:var(--bg);color:var(--ink);
   font-size:11.5px;color:var(--muted)}
 .r-signin a{color:var(--staff-accent);text-decoration:none}
 
+/* notification intro */
+.notif-intro{margin:10px 14px 0;padding:10px;border:1px solid var(--line);border-radius:8px;
+  background:var(--tile);color:var(--muted);font-size:12px;line-height:1.4}
+.notif-intro a{color:var(--staff-accent);text-decoration:none}
+.notif-intro a:hover{text-decoration:underline}
+.notif-intro button{display:block;margin-top:8px;background:var(--chip);border:1px solid var(--line);
+  border-radius:8px;padding:5px 9px;color:var(--ink);font-size:12px;cursor:pointer}
+.notif-intro button:hover{background:var(--tile-hover)}
+
 /* quick-launch grid */
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 14px 4px}
 .grid a{display:flex;flex-direction:column;align-items:center;gap:5px;
