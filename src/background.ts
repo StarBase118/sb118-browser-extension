@@ -5,8 +5,9 @@
 import browser, { type Runtime } from 'webextension-polyfill'
 import { badgeText, advanceLastSeen, countNew } from '@/lib/notification-count'
 import { fetchNotifications } from '@/lib/notifications-client'
-import { ALL_SOURCES, POLL_PERIOD_MINUTES } from '@/lib/notifications-types'
+import { POLL_PERIOD_MINUTES } from '@/lib/notifications-types'
 import { getLastSeen, setLastSeen, setCachedCount } from '@/lib/notifications-store'
+import { enabledSources, getPrefs } from '@/lib/prefs'
 
 const ALARM_NAME = 'notif-poll'
 const BADGE_BACKGROUND = '#0d1120'
@@ -21,22 +22,24 @@ async function setBadge(total: number): Promise<void> {
 }
 
 export async function refreshBadge(): Promise<void> {
-  const res = await fetchNotifications()
+  const enabled = enabledSources(await getPrefs())
+  const res = await fetchNotifications(enabled)
 
   // `null` means the worker could not look at all. Leave the existing badge
   // alone so a temporary HQ/network failure does not falsely clear activity.
   if (!res) return
 
-  const total = countNew(res.sources, await getLastSeen(), ALL_SOURCES)
+  const total = countNew(res.sources, await getLastSeen(), enabled)
   await setCachedCount(total)
   await setBadge(total)
 }
 
 export async function markAllSeen(): Promise<void> {
-  const res = await fetchNotifications()
+  const enabled = enabledSources(await getPrefs())
+  const res = await fetchNotifications(enabled)
   if (!res) return
 
-  const next = advanceLastSeen(await getLastSeen(), res.sources, ALL_SOURCES)
+  const next = advanceLastSeen(await getLastSeen(), res.sources, enabled)
   await setLastSeen(next)
   await setCachedCount(0)
   await setBadge(0)

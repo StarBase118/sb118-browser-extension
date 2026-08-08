@@ -5,6 +5,10 @@ label{display:flex;flex-direction:column;gap:5px;font-size:.9rem;color:#3a4761}
 input{padding:8px;border:1px solid #cbd3e1;border-radius:7px;font-size:14px}
 button{align-self:flex-start;background:#1d72a6;color:#fff;border:0;border-radius:7px;padding:9px 16px;cursor:pointer}
 .saved{color:#1f8a52;font-size:.9rem;margin-left:10px}
+.help{font-size:.9rem;color:#3a4761;margin:.25rem 0 .75rem}
+.checks{display:flex;flex-direction:column;gap:8px}
+.check{flex-direction:row;align-items:center;gap:8px}
+.check input{padding:0}
 ul{list-style:none;padding:0} li{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #eef1f6}
 li a{color:#1d72a6;text-decoration:none;word-break:break-all}
 li button{background:none;color:#a61e22;border:0;cursor:pointer;font-size:14px}

@@ -41,9 +41,15 @@ function normalizeSources(v: Record<string, unknown>): NotificationsResponse['so
   return sources
 }
 
-export async function fetchNotifications(): Promise<NotificationsResponse | null> {
+export async function fetchNotifications(sources?: NotificationSource[]): Promise<NotificationsResponse | null> {
+  // An explicit empty list means the member disabled every source. Do not send
+  // `sources=` because the server treats an absent/empty filter as "all".
+  if (sources?.length === 0) return { sources: {} }
+
+  const url = sources ? `${ENDPOINT}&sources=${sources.join(',')}` : ENDPOINT
+
   try {
-    const res = await fetch(ENDPOINT, {
+    const res = await fetch(url, {
       credentials: 'include',
       headers: { accept: 'application/json' },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),

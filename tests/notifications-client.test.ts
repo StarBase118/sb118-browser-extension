@@ -32,6 +32,42 @@ describe('fetchNotifications', () => {
     })
   })
 
+  it('adds a sources filter when one source is requested', async () => {
+    const fetchFn = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) => json({ sources: {} }))
+    vi.stubGlobal('fetch', fetchFn)
+
+    await fetchNotifications(['news'])
+
+    expect(String(fetchFn.mock.calls[0][0])).toContain('sources=news')
+  })
+
+  it('comma-joins requested sources in the given order', async () => {
+    const fetchFn = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) => json({ sources: {} }))
+    vi.stubGlobal('fetch', fetchFn)
+
+    await fetchNotifications(['sims', 'news'])
+
+    expect(String(fetchFn.mock.calls[0][0])).toContain('sources=sims,news')
+  })
+
+  it('skips the request and returns empty sources when no sources are enabled', async () => {
+    const fetchFn = vi.fn()
+    vi.stubGlobal('fetch', fetchFn)
+
+    expect(await fetchNotifications([])).toEqual({ sources: {} })
+    expect(fetchFn).not.toHaveBeenCalled()
+  })
+
+  it('keeps the unfiltered request when no sources argument is provided', async () => {
+    const fetchFn = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) => json({ sources: {} }))
+    vi.stubGlobal('fetch', fetchFn)
+
+    await fetchNotifications()
+
+    const url = new URL(String(fetchFn.mock.calls[0][0]))
+    expect(url.searchParams.has('sources')).toBe(false)
+  })
+
   it('returns an empty response on 401 instead of null', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => json({ authenticated: false }, 401)))
     expect(await fetchNotifications()).toEqual({ sources: {} })

@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   getLastSeen: vi.fn(),
   setLastSeen: vi.fn(),
   setCachedCount: vi.fn(),
+  getPrefs: vi.fn(),
 }))
 
 vi.mock('webextension-polyfill', () => ({
@@ -47,12 +48,21 @@ vi.mock('@/lib/notifications-store', () => ({
   setCachedCount: mocks.setCachedCount,
 }))
 
+vi.mock('@/lib/prefs', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/prefs')>('@/lib/prefs')
+  return {
+    ...actual,
+    getPrefs: mocks.getPrefs,
+  }
+})
+
 import { markAllSeen, refreshBadge } from '@/background'
 
 const response = (sources: NotificationsResponse['sources']): NotificationsResponse => ({ sources })
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mocks.getPrefs.mockResolvedValue({})
   mocks.getLastSeen.mockResolvedValue({})
   mocks.setLastSeen.mockResolvedValue(undefined)
   mocks.setCachedCount.mockResolvedValue(undefined)
@@ -101,6 +111,33 @@ describe('background notification badge', () => {
     expect(mocks.setBadgeText).toHaveBeenCalledWith({ text: '3' })
   })
 
+  it('excludes a disabled source from the request and badge total', async () => {
+    mocks.getPrefs.mockResolvedValue({ notifications: { news: false } })
+    mocks.fetchNotifications.mockResolvedValue(response({
+      announcements: {
+        items: [
+          { id: 'a', title: 'A', url: 'https://hq.starbase118.net/a', at: '2026-08-07T17:00:00.000Z' },
+        ],
+      },
+      sims: {
+        items: [
+          { id: 's', title: 'S', url: 'https://hq.starbase118.net/s', at: '2026-08-07T18:00:00.000Z' },
+        ],
+      },
+      news: {
+        items: [
+          { id: 'n', title: 'N', url: 'https://hq.starbase118.net/n', at: '2026-08-07T19:00:00.000Z' },
+        ],
+      },
+    }))
+
+    await refreshBadge()
+
+    expect(mocks.fetchNotifications).toHaveBeenCalledWith(['announcements', 'sims'])
+    expect(mocks.setCachedCount).toHaveBeenCalledWith(2)
+    expect(mocks.setBadgeText).toHaveBeenCalledWith({ text: '2' })
+  })
+
   it('marks all visible sources seen and clears the badge', async () => {
     const current: LastSeen = { announcements: '2026-08-07T10:00:00.000Z' }
     mocks.fetchNotifications.mockResolvedValue(response({
@@ -117,6 +154,35 @@ describe('background notification badge', () => {
     expect(mocks.setLastSeen).toHaveBeenCalledWith({ announcements: '2026-08-07T17:00:00.000Z' })
     expect(mocks.setCachedCount).toHaveBeenCalledWith(0)
     expect(mocks.setBadgeText).toHaveBeenCalledWith({ text: '' })
+  })
+
+  it('does not advance a disabled source marker when marking seen', async () => {
+    const current: LastSeen = {
+      announcements: '2026-08-07T10:00:00.000Z',
+      news: '2026-08-07T11:00:00.000Z',
+    }
+    mocks.getPrefs.mockResolvedValue({ notifications: { news: false } })
+    mocks.fetchNotifications.mockResolvedValue(response({
+      announcements: {
+        items: [
+          { id: 'a', title: 'A', url: 'https://hq.starbase118.net/a', at: '2026-08-07T17:00:00.000Z' },
+        ],
+      },
+      news: {
+        items: [
+          { id: 'n', title: 'N', url: 'https://hq.starbase118.net/n', at: '2026-08-07T18:00:00.000Z' },
+        ],
+      },
+    }))
+    mocks.getLastSeen.mockResolvedValue(current)
+
+    await markAllSeen()
+
+    expect(mocks.fetchNotifications).toHaveBeenCalledWith(['announcements', 'sims'])
+    expect(mocks.setLastSeen).toHaveBeenCalledWith({
+      announcements: '2026-08-07T17:00:00.000Z',
+      news: '2026-08-07T11:00:00.000Z',
+    })
   })
 
   it('does not clear seen state when markAllSeen cannot look', async () => {
