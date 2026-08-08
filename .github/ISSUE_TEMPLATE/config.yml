@@ -1,5 +1,9 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Already-known gaps in the test build
+    url: https://github.com/StarBase118/sb118-browser-extension/blob/main/docs/STAFF-TEST.md#known-gaps--not-bugs-please-dont-report-these
+    about: The badge not listing notifications, Firefox forgetting the add-on, and three others are known. Check here first.
+
   - name: How do I use this? / general questions
     url: https://discord.gg/starbase118
     about: Ask in Discord — you will get an answer faster there than in the tracker.
