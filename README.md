@@ -8,14 +8,17 @@ Tiered: every member gets a core set of features; staff get extra admin tools th
 
 ## Status
 
-**Phase 1 shipped** (launcher backbone). Phase 2 is shipping track by track. See [`ROADMAP.md`](ROADMAP.md).
+**v0.2.0 — Phases 1, 2 and 3 are all shipped and deployed.** See [`ROADMAP.md`](ROADMAP.md).
 
 | Phase | What | State |
 |-------|------|-------|
 | 1 | Launcher, login light, my ship/character, pinned links, staff tiering, `/api/me` backbone | ✅ **Done + deployed** |
-| 2 | Federated search (HQ destinations, wiki, main site, staff Discourse) | 🟡 **Client + HQ destinations done**; main-site and forum routes pending |
-| 3 | Notification badge + announcements feed | ⬜ Planned |
+| 2 | Federated search (HQ destinations, wiki, main site, staff Discourse) | ✅ **Done + deployed** |
+| 3 | Notification badge (announcements, sims, news), per-source toggles, first-run explainer | ✅ **Done + deployed** |
 | 4 | Glossary tooltips, staff member-lookup, feedback-queue peek | ⬜ Planned |
+
+Currently in a **staff test round** — see [`docs/STAFF-TEST.md`](docs/STAFF-TEST.md) if you were
+asked to try it.
 
 ## What it does
 
@@ -24,6 +27,7 @@ Tiered: every member gets a core set of features; staff get extra admin tools th
 - **Login status light** — green when you have an Authentik session; one click to log in when not.
 - **My ship / My character** — one click to your wiki pages, from `/api/me`.
 - **Pinned links** — pin any page for one-click return.
+- **Notification badge** — a count on the toolbar icon for new announcements, new sims on your ship, and new Community News. Opening the popup clears it. Each of the three can be switched off independently on the options page.
 - **Staff tiering** — a staff section (Forums, Authentik, n8n, Forum admin) appears when HQ reports you're staff.
 
 ### How search behaves
@@ -44,8 +48,22 @@ Two pieces:
 
 ## Install
 
-**Not in the browser stores yet.** Until it is, you install it yourself from a build. You need
-[Node.js](https://nodejs.org) 22 or newer.
+**Not in the browser stores yet.** Download a build from
+[Releases](https://github.com/StarBase118/sb118-browser-extension/releases) — no Node, no
+build step:
+
+- **Chrome / Edge / Brave** — download `sb118-extension-chromium-<version>.zip` and unzip it.
+  Go to `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and choose
+  the unzipped folder. It stays installed across restarts.
+- **Firefox** — download `sb118-extension-firefox-<version>.zip` and unzip it. Go to
+  `about:debugging` → **This Firefox** → **Load Temporary Add-on**, and choose the
+  `manifest.json` inside. Firefox drops temporary add-ons when you restart it, so you will
+  need to load it again next time.
+
+Keep the unzipped folder where it is — deleting it uninstalls the extension.
+
+<details>
+<summary>Or build it yourself (needs <a href="https://nodejs.org">Node.js</a> 22+)</summary>
 
 ```bash
 git clone https://github.com/StarBase118/sb118-browser-extension.git
@@ -54,13 +72,9 @@ npm install
 npm run build
 ```
 
-Then load the folder that build produced:
+Then load `dist/chromium` (or `dist/firefox/manifest.json`) exactly as above.
 
-- **Chrome / Edge / Brave** — go to `chrome://extensions`, turn on **Developer mode**, click
-  **Load unpacked**, and choose the `dist/chromium` folder.
-- **Firefox** — go to `about:debugging` → **This Firefox** → **Load Temporary Add-on**, and
-  choose `dist/firefox/manifest.json`. Firefox drops temporary add-ons when you restart it, so
-  you will need to load it again next time.
+</details>
 
 Sign in to [HQ](https://hq.starbase118.net) as usual in a normal tab. The extension picks up
 that session — the light in the popup turns green when it has one.
@@ -74,7 +88,12 @@ that session — the light in the popup turns green when it has one.
 - **No analytics, no telemetry, no third-party services.** Nobody is counting your clicks.
 - **What you type in the search box** goes to the SB118 systems being searched, and nowhere
   else. It is not logged or stored by the extension.
-- **Pinned links and your manual ship/character settings** stay in your own browser.
+- **Pinned links, your manual ship/character settings, and what the badge has counted** stay
+  in your own browser. Nothing about what you have read is sent anywhere — which is also why
+  the badge does not sync between two computers.
+- **The badge checks HQ every 15 minutes** while your browser is running, and only for the
+  sources you have left switched on. Switching one off stops asking for it, rather than
+  hiding a number that was fetched anyway.
 - **You only ever see what you already have access to.** HQ decides which pages appear for
   you, and the forum is searched as you, with its own permissions applied.
 

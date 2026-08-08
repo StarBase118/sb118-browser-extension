@@ -2,16 +2,31 @@
 
 _Last updated: 2026-08-08._
 
-## ⏭ Pick up here (Phase 3 — awareness)
+## ⏭ Pick up here (staff test round for v0.2.0)
 
-**Phase 2 is COMPLETE and live.** All four search sources return results in the popup:
-destinations, wiki, main site (news + pages + sims), and staff Discourse. Nothing in Phase 2
-is outstanding.
+**Phases 1–3 are all shipped.** The badge is live end-to-end: the HQ endpoint
+`GET /api/me/notifications` is deployed on prod (megatool `3fdaa565`) and was verified
+against a real signed-in session returning all three sources populated.
 
-Next up is **Phase 3 — awareness**: a toolbar badge fed by three switchable sources.
-**Design spec written 2026-08-08 and scope confirmed by Jordan** —
-`docs/superpowers/specs/2026-08-08-sb118-extension-phase3-awareness-design.md`
-(readable companion: `spec-companion-phase3.html` in this repo). Start with slice 1.
+Next is a **staff test round on v0.2.0**, distributed as zipped unpacked builds from a
+GitHub Release rather than through the browser stores — no developer accounts, no review
+wait, no privacy-policy page needed yet. Store distribution stays deferred until the
+extension goes fleet-wide.
+
+Open before/during the test round:
+
+- [ ] **Firefox two-browser smoke test** — see "Remaining Phase 1 verification" below. Worth
+      doing before handing Firefox users a build, since a grey login light there would make
+      every other feature look broken.
+- [ ] Confirm the "My character" chip links to the real wiki page in-browser.
+- [ ] Collect staff feedback via GitHub issues (templates already exist from Phase 2).
+
+**Known gap testers will hit:** the badge counts what is new, and opening the popup clears
+it, but **the popup does not yet list the notification items themselves**. That was a
+deliberate scope line — no UI was invented past the spec — so it belongs in the test
+instructions as a known gap, not a bug report. Building that list is the obvious Phase 3.1.
+
+### What Phase 3 shipped
 
 - **Announcements** — human posts only in Discord `📣announcements` (39 of the last 50
   messages there are webhook/bot noise; the filter is the feature)
@@ -19,13 +34,18 @@ Next up is **Phase 3 — awareness**: a toolbar badge fed by three switchable so
 - **News** — the public Community News RSS feed at `www.starbase118.net/feed`
 - **Per-source toggles**, plus a one-time explainer the first time the badge is non-zero
 
-**`POST /api/me/seen` from the Phase 1 design is cancelled.** The endpoint returns recent
+**`POST /api/me/seen` from the Phase 1 design was cancelled.** The endpoint returns recent
 items rather than counts, and the extension keeps its own last-seen markers in
 `storage.local` — no new table, no mutating route, no CSRF surface. The trade is that badge
 state is per-browser and does not sync.
 
-Two Phase 1 verifications are still open and worth doing first — see
-"Remaining Phase 1 verification" below.
+**The bug worth remembering:** the sims source shipped returning empty for every member.
+`listShipSims` matches `sims.ship` against Aria's SHORT tokens (`Ops`), but the notification
+code handed it the canonical roster spelling (`StarBase 118 Ops`), which matches zero rows
+and reads downstream as "this member has not simmed". Every unit test mocked `listShipSims`,
+so none could see it — only an authenticated live check against prod caught it. Fixed in
+megatool PR #998, which also enforces the token at the DB boundary so no future caller can
+reach the query with a roster spelling.
 
 ## Phase 2 — what shipped (done)
 
@@ -95,7 +115,7 @@ parallel, merge results; access control stays with each system.
 |-------|-------|-------|
 | **1 — launcher backbone** | Quick-launch, login light, my ship/character, pinned links, staff tiering, `/api/me`, Chromium+Firefox builds | ✅ **Shipped** (extension `main`; `/api/me` live on prod) |
 | **2 — search** | Federated unified search over destinations, wiki, main site and staff forum; public repo | ✅ **Shipped 2026-08-08** (all four sources live; parked add-ons — omnibox, right-click — still deferred) |
-| **3 — awareness** | Announcements feed; notification badge (sims first); `POST /api/me/seen` | ⬜ Planned — **next up** |
+| **3 — awareness** | Announcements + sims + news badge, per-source toggles, first-run explainer | ✅ **Shipped 2026-08-08** (extension PR #1; HQ endpoint live at megatool `3fdaa565`) |
 | **4 — flavor + staff tools** | Glossary tooltips; staff member-lookup (`/api/staff/lookup`); feedback-queue peek (`/api/staff/feedback-count`) | ⬜ Planned |
 
 ## Phase 1 — what shipped (done)
