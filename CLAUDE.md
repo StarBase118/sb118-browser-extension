@@ -2,7 +2,46 @@
 
 Browser extension for the StarBase 118 community — launcher + search + personalized dashboard for all SB118 web properties. **SB118-only** (StarBase118 org, ufopsb118 account). No CH/MFC coupling.
 
-**Start here when picking this up:** [`ROADMAP.md`](ROADMAP.md) has phase status + the "pick up here" for Phase 2.
+**Start here when picking this up:** [`ROADMAP.md`](ROADMAP.md) has phase status + the "pick up here" for the staff test round.
+
+## v0.2.0 — staff test build (2026-08-08)
+
+Phase 3 (awareness) is shipped and merged to `main` (PR #1 `0772e65`). Released as
+**v0.2.0** (PR #2 `8b82959`) and distributed via a **GitHub Release**, not the browser
+stores: https://github.com/StarBase118/sb118-browser-extension/releases/tag/v0.2.0
+(marked prerelease, two zips — `sb118-extension-chromium-0.2.0.zip` /
+`sb118-extension-firefox-0.2.0.zip`, each unpacking to one clearly-named folder).
+Store distribution (Chrome Web Store / Edge / AMO — needs SB118 developer accounts + a
+hosted privacy policy) is deliberately deferred to fleet-wide launch, not this round.
+
+**What Phase 3 added:** an MV3 background alarm polls `GET /api/me/notifications` every
+15 minutes, counts items newer than a per-source last-seen marker in `storage.local`, and
+badges the toolbar icon (capped "9+"). Per-source toggles on the options page narrow the
+`sources=` query param HQ receives. First-run explainer. The popup counts notifications but
+does **not** list them yet — that's Phase 3.1, a deliberate scope line, documented as a known
+gap everywhere testers will look (STAFF-TEST.md, the release notes, the forum announcement).
+
+A corrupt last-seen marker used to silently pin a source's badge count at zero while looking
+calm — fixed in review before merge (Codex wrote the diff, Claude reviewed and caught this)
+to count all items instead, same as a missing marker, with a regression test.
+
+**Staff test round is live** — announced on staff Discourse (topic 4180,
+https://staff.starbase118.net/t/sb118-browser-extension-test-build-ready-to-try/4180),
+posted as ClaudeAI (user 230, `hq-devnotes` group) via `rails runner` — see `sb118/CLAUDE.md`
+→ Discourse section for the posting mechanism and a hashtag-autolink gotcha hit while writing
+it. Issue templates for this round: `.github/ISSUE_TEMPLATE/test_feedback.yml` (low-friction
+"what did you notice" form) alongside the existing `bug_report.yml`. Labels added (additive):
+`staff test`, `known gap`, `area: badge/search/launcher/options/build/hq-endpoint`, `firefox`,
+`chromium`.
+
+**Open before this can go further:**
+1. **Firefox two-browser smoke test** — Jordan needs to load `dist/firefox` while signed
+   into HQ and confirm the login light goes green (proves Firefox carries the session
+   cookie via `credentials:'include'`). Playwright can side-load into Chromium but not
+   Firefox, so this needs a human with a real Firefox install. If grey: build the
+   content-script relay fallback specified in the Phase 1 plan, Slice 5.
+2. Eyeball the "My character" wiki link while signed in (deployed, never visually confirmed).
+3. Phase 3.1 (list the notifications, not just count them) — not started.
 
 ## ⏭ Picking this up (as of 2026-07-26)
 
