@@ -1,35 +1,64 @@
 # SB118 Browser Extension — roadmap & pick-up-here
 
-_Last updated: 2026-07-26._
+_Last updated: 2026-08-08._
 
-## ⏭ Pick up here (Phase 2 — search)
+## ⏭ Pick up here (Phase 3 — awareness)
 
-**Scope settled 2026-07-26** — Phase 2 covers four sources: HQ destinations, wiki, main site
-(news + pages + sim archive), and staff Discourse proxied through HQ. Design spec:
+**Phase 2 is COMPLETE and live.** All four search sources return results in the popup:
+destinations, wiki, main site (news + pages + sims), and staff Discourse. Nothing in Phase 2
+is outstanding.
+
+Next up is **Phase 3 — awareness**: the announcements feed and the notification badge (sims
+first), backed by `POST /api/me/seen`. The popup already renders an Announcements section,
+hidden behind a flag until this ships.
+
+Two Phase 1 verifications are still open and worth doing first — see
+"Remaining Phase 1 verification" below.
+
+## Phase 2 — what shipped (done)
+
+**Scope settled 2026-07-26** — four sources: HQ destinations, wiki, main site (news + pages +
+sim archive), and staff Discourse proxied through HQ. Design spec:
 `docs/superpowers/specs/2026-07-26-sb118-extension-phase2-search-design.md`
 (readable companion: `spec-companion-phase2.html` in this repo).
 
-**Track 1 (HQ) is DONE and live** — `GET /api/me` now returns `nav[]`, the HQ pages the caller
-may open, scoped by their groups (megatool PR #751, prod SHA `2151f3d1`). The extension can
-match "vote" locally against that list with no request.
+- **Track 1 (HQ destinations)** — `GET /api/me` returns `nav[]`, the HQ pages the caller may
+  open, scoped by their groups (megatool PR #751, prod SHA `2151f3d1`). The extension matches
+  "vote" locally against that cached list with no request.
+- **Track 3 (extension search UI)** — the popup search box fans out to all four sources
+  in parallel and merges the results (extension PR #2).
+- **Track 2 (main site)** — public `GET /api/search` on www returns news, pages and sims
+  (site PR #103). Needed no extension change; the three groups were already wired.
+- **Track 4 (public repo)** — MIT license, SECURITY.md, issue templates, install + privacy
+  docs (extension PR #3), so members can file issues.
+- **Staff Discourse search** — shipped 2026-08-08 (megatool PR #989 `4d9df681`, infra PR #316
+  `94d1ed34`). Staff-only, via `GET /api/search/forum` on HQ.
 
-**Track 3 (extension search UI) is DONE** — the popup search box is wired to all four
-sources. Destinations match locally against the cached `nav[]`; wiki results are live now;
-news/pages/sims and forum render as "unavailable" until their server routes ship, which is
-the designed degradation, not a bug.
+### How the forum search stays correctly permissioned
 
-**Track 2 (main site) is DONE and live** — public `GET /api/search` returns news, pages and
-sims. It needed no extension change: the three groups were already wired and simply started
-returning results.
+This was the last blocker, and the constraint that shaped it is worth keeping in front of
+whoever touches it next: **the query runs as the member who typed it**, so Discourse itself
+applies that member's category permissions.
 
-**BLOCKED — a staff decision:** staff Discourse search. The query has to run **as the member
-who typed it**, so that Discourse applies that member's own permissions to the results. The
-credentials HQ has today cannot do that, and provisioning one that can is a call for the
-fleet's staff to make.
+Two Discourse credentials, deliberately separate:
 
-Until then the forum group is absent and everything else in Phase 2 works. Whoever
-implements it: do **not** query as a privileged account and filter afterwards — that moves
-the permission check out of Discourse and into our code, which is the wrong place for it.
+1. `SB118_DISCOURSE_ADMIN_API_KEY` (as `system`, read-only) resolves the Authentik `sub` to a
+   Discourse username via `GET /u/by-external/oidc/:sub`, cached 1h.
+2. `SB118_DISCOURSE_SEARCH_API_KEY` — an **All Users** key, granular-scoped to `search`. The
+   query goes out with `Api-Username: <that member>`.
+
+**Do NOT collapse these into one privileged query filtered afterwards.** That moves the
+permission check out of Discourse and into our code, and `system` sees private messages.
+
+**The usernames do not match.** Discourse links HQ accounts to Authentik through
+`user_associated_accounts` (provider `oidc`), not by name — the forum's usernames came from
+the IPB migration, so Authentik `wolf` is Discourse `Jordan_FltAdmlWolf`. Assuming they match
+returns 403 for essentially everyone. A member who has never signed into the forum through
+Authentik has no association row at all, and correctly gets an `unavailable` forum group
+rather than an empty one.
+
+Full writeup: Tech KB → "Discourse usernames are not Authentik usernames"
+(`3b6c3f472748819b916eee44e7142542`).
 
 ### Superseded scope notes (kept for context)
 
@@ -48,18 +77,13 @@ of the design spec, scoped to the chosen sources. The search box already renders
 (disabled) — Phase 2 wires it up. Search is **federated**: query each source's own endpoint in
 parallel, merge results; access control stays with each system.
 
-### Phase 2 open items
-- Wiki search: extension has host permission for `wiki.starbase118.net`; use `api.php?action=query&list=search` (or opensearch). No auth needed.
-- Main-site search: needs a small search route on `sb118-megatool`'s sibling Payload/Next main site (`starbase118-site`).
-- Staff Discourse search (`staff.starbase118.net/search.json`): **spike first** — confirm a credentialed cross-site fetch from the extension carries the Discourse session cookie (the HQ spike proved it for hq.starbase118.net in Chrome; Discourse uses a different cookie).
-
 ## Phase status
 
 | Phase | Scope | State |
 |-------|-------|-------|
 | **1 — launcher backbone** | Quick-launch, login light, my ship/character, pinned links, staff tiering, `/api/me`, Chromium+Firefox builds | ✅ **Shipped** (extension `main`; `/api/me` live on prod) |
-| **2 — search** | Federated unified search, scope toggle; parked add-ons (omnibox, right-click) | 🟡 In progress — HQ `nav[]` + extension UI done; main-site route pending, forum blocked |
-| **3 — awareness** | Announcements feed; notification badge (sims first); `POST /api/me/seen` | ⬜ Planned |
+| **2 — search** | Federated unified search over destinations, wiki, main site and staff forum; public repo | ✅ **Shipped 2026-08-08** (all four sources live; parked add-ons — omnibox, right-click — still deferred) |
+| **3 — awareness** | Announcements feed; notification badge (sims first); `POST /api/me/seen` | ⬜ Planned — **next up** |
 | **4 — flavor + staff tools** | Glossary tooltips; staff member-lookup (`/api/staff/lookup`); feedback-queue peek (`/api/staff/feedback-count`) | ⬜ Planned |
 
 ## Phase 1 — what shipped (done)

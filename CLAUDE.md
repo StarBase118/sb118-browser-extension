@@ -15,20 +15,36 @@ Phase 2 is **designed and approved**; one of its four tracks is **shipped**.
 
 | Track | State | Next step |
 |---|---|---|
-| **1. HQ (megatool)** | ✅ `nav[]` live on `/api/me` (PR #751, prod `2151f3d1`). Forum route ⛔ blocked. | See the blocker below |
-| **2. main-site** | ⬜ Not started | Add public `GET /api/search` to `sb118/main-site` returning news + pages + sims (sims reuse `searchSims()` in `src/lib/aria-archive.ts` — already live on Postgres). Shipping it turns three already-wired groups on with **no extension change** |
+| **1. HQ (megatool)** | ✅ `nav[]` live on `/api/me` (PR #751, prod `2151f3d1`); forum route live (PR #989, `4d9df681`) | See "Forum search" below |
+| **2. main-site** | ✅ Live | Public `GET /api/search` on www returns news + pages + sims (site PR #103) |
 | **3. extension UI** | ✅ Done | Search box wired to all four sources — see "Search (Phase 2, track 3)" below |
-| **4. repo public** | ⬜ Not started | Jordan chose to make this repo public so members can file issues. Audit git history FIRST, then license (MIT), issue templates, README, SECURITY.md, tagged releases |
+| **4. repo public** | ✅ Done | MIT license, SECURITY.md, issue templates, install + privacy docs (PR #3) |
 
-**⛔ The one blocker — a staff decision, not a code change.** Forum search has to run as the
-member who typed the query, so that Discourse itself applies that member's permissions to the
-results. The credentials HQ has today cannot do that, and provisioning one that can is a call
-for the fleet's staff to make. Until then the forum group is simply absent — everything else
-in Phase 2 works without it.
+### Forum search — how it stays correctly permissioned (shipped 2026-08-08)
 
-Implementation note for whoever picks this up: the query must be issued **as the calling
-member**. Do not query as a privileged account and filter afterwards — that inverts the
-permission model and puts the gate in our code instead of Discourse's.
+The query runs **as the member who typed it**, so Discourse itself applies that member's
+category permissions. HQ proxies it at `GET /api/search/forum`, which is where the staff gate
+lives (`/api/search/*` is outside the middleware matcher, same as `/api/me`).
+
+Two Discourse credentials, deliberately separate:
+
+1. `SB118_DISCOURSE_ADMIN_API_KEY` (as `system`, read-only) resolves the Authentik `sub` to a
+   Discourse username via `GET /u/by-external/oidc/:sub`, cached 1h.
+2. `SB118_DISCOURSE_SEARCH_API_KEY` — an **All Users** key, granular-scoped to `search`, sent
+   with `Api-Username: <that member>`.
+
+**Do not collapse these into one privileged query filtered afterwards** — that inverts the
+permission model, puts the gate in our code instead of Discourse's, and `system` sees private
+messages.
+
+**The usernames do not match.** Discourse links HQ accounts to Authentik through
+`user_associated_accounts` (provider `oidc`), not by name — the forum's usernames came from
+the IPB migration, so Authentik `wolf` is Discourse `Jordan_FltAdmlWolf`. There are zero
+`single_sign_on_records` rows. A member who has never signed into the forum via Authentik has
+no association row and correctly gets an `unavailable` forum group, not an empty one.
+
+Full writeup: Tech KB → "Discourse usernames are not Authentik usernames"
+(`3b6c3f472748819b916eee44e7142542`).
 
 **Two corrections carried forward, so they aren't re-derived:**
 - Discourse's missing CORS headers do **not** block a direct extension fetch — an MV3 extension bypasses CORS for hosts in `host_permissions` (that is how Phase 1's `/api/me` fetch works). The proxy-through-HQ design stands on enforcement + browser-consistency grounds, not CORS.
@@ -46,10 +62,9 @@ The popup search box is live. Four sources, three requests, one local match:
 | `src/lib/search.ts` | Fans out, emits each group as it lands, honours one abort signal |
 | `src/lib/search-types.ts` | The shared hit/group shape and the tuning constants |
 
-**Only two groups return anything today.** Destinations work (megatool PR #751 is live) and
-so does the wiki. `news`/`pages`/`sims` and `forum` render as "unavailable" because their
-server routes do not exist yet — that is the designed degradation, so **shipping track 2
-turns three groups on with no change here**.
+**All four groups return results as of 2026-08-08.** The "unavailable" rendering is still the
+designed degradation for a source whose request fails or times out — it must never collapse
+into an empty group, or an outage reads as a clean no-match.
 
 **Five decisions worth not re-deriving:**
 
