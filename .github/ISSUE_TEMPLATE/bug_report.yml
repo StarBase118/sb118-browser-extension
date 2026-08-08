@@ -7,6 +7,10 @@ body:
       value: |
         Thanks for reporting. A few details up front save a round trip.
 
+        **If you are on the test build and just want to say what you noticed**, the
+        [test-round feedback](https://github.com/StarBase118/sb118-browser-extension/issues/new?template=test_feedback.yml)
+        form is shorter and does not ask you to reproduce anything.
+
         **If this is a security problem, please close this and follow
         [SECURITY.md](https://github.com/StarBase118/sb118-browser-extension/blob/main/SECURITY.md)
         instead** — do not describe it in a public issue.
@@ -47,7 +51,7 @@ body:
     id: version
     attributes:
       label: Extension version
-      description: Shown on your browser's extensions page (e.g. 0.1.0).
+      description: Shown on your browser's extensions page (e.g. 0.2.0).
     validations:
       required: true
 

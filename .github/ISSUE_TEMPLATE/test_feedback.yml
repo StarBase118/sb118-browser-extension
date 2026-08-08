@@ -1,0 +1,62 @@
+name: Test-round feedback
+description: Impressions from trying the test build — anything at all, however small.
+labels: ["staff test"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the low-effort one. You do not need to have reproduced anything, and you do
+        not need to be sure it is a real problem. "The number looked wrong and I'm not sure
+        why" is a genuinely useful report.
+
+        **Before writing:** the
+        [known gaps](https://github.com/StarBase118/sb118-browser-extension/blob/main/docs/STAFF-TEST.md#known-gaps--not-bugs-please-dont-report-these)
+        list covers the things we already know about — chiefly that the badge counts
+        notifications but does not yet list them.
+
+  - type: textarea
+    id: feedback
+    attributes:
+      label: What did you notice?
+      description: Confusing, broken, surprising, missing, or just annoying — all fair game.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Chrome
+        - Edge
+        - Brave
+        - Firefox
+        - Other (say which above)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part?
+      description: Best guess is fine.
+      options:
+        - The notification badge
+        - Search
+        - The launcher buttons
+        - My ship / My character
+        - Pinned links
+        - The options page
+        - Installing it
+        - Not sure / something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshot or anything else?
+      description: |
+        A screenshot of the popup usually says more than a description of it.
+
+        **Please redact your email address and anything else personal before posting.**
