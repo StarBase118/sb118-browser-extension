@@ -10,12 +10,17 @@ const KEY = 'pins'
  */
 export const MAX_PIN_LABEL = 120
 
+/** The one place a label is normalised before it reaches storage. */
+function sanitizeLabel(label: string): string {
+  return label.trim().slice(0, MAX_PIN_LABEL)
+}
+
 export async function getPins(): Promise<Pin[]> {
   return readStorage<Pin[]>(KEY, (v): v is Pin[] => Array.isArray(v), [])
 }
 export async function addPin(p: Pin): Promise<Pin[]> {
   const pins = (await getPins()).filter((x) => x.url !== p.url)
-  pins.unshift({ ...p, label: p.label.trim().slice(0, MAX_PIN_LABEL) })
+  pins.unshift({ ...p, label: sanitizeLabel(p.label) })
   const capped = pins.slice(0, 20)
   await browser.storage.local.set({ [KEY]: capped })
   return capped
@@ -41,7 +46,7 @@ export async function renamePin(url: string, label: string): Promise<Pin[]> {
   const pins = await getPins()
   if (!trimmed) return pins
   const next = pins.map((p) =>
-    p.url === url ? { ...p, label: trimmed.slice(0, MAX_PIN_LABEL) } : p
+    p.url === url ? { ...p, label: sanitizeLabel(trimmed) } : p
   )
   await browser.storage.local.set({ [KEY]: next })
   return next
