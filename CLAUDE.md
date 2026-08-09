@@ -74,6 +74,12 @@ Two reports, one of which was an HQ bug rather than an extension bug:
    content-script relay fallback specified in the Phase 1 plan, Slice 5.
 2. Eyeball the "My character" wiki link while signed in (deployed, never visually confirmed).
 3. Phase 3.1 (list the notifications, not just count them) — not started.
+4. **PR #6 (`simplify/pin-chip-cleanup`) is open, not merged** — `/simplify` output on the
+   round-1 fix (announcements with no URL no longer render `<a href="#">`, label
+   dedupe, combined CSS, shared `scripts/targets.mjs`). Held deliberately: this repo has no
+   AI review pipeline, only build-and-test, so `/simplify` output doesn't self-merge here.
+   Needs Jordan's read before merging. Worktree `.claude/worktrees/simplify-pass` backs it —
+   keep until merged.
 
 ## ⏭ Picking this up (as of 2026-07-26)
 
