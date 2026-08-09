@@ -74,7 +74,19 @@ body{width:360px;margin:0;background:var(--bg);color:var(--ink);
 .chip{display:inline-flex;align-items:center;gap:6px;background:var(--chip);border:1px solid #2c3767;
   border-radius:8px;padding:6px 11px;color:var(--ink);text-decoration:none;font-size:12.5px;transition:background .12s}
 .chip:hover{background:#2c3767}
+/* A chip with no destination (no wiki page on file) is text, not a link. */
+.chip.nolink{color:var(--muted);cursor:default}
+.chip.nolink:hover{background:var(--chip)}
 .x{margin-left:2px;background:none;border:0;color:var(--muted);cursor:pointer;font-size:12px;padding:0}
+.edit{margin-left:2px;background:none;border:0;color:var(--muted);cursor:pointer;font-size:12px;padding:0}
+.x:hover,.edit:hover{color:var(--ink)}
+
+/* Pin labels come from the page title, so they must be capped or one long
+   title swamps the row. The full text stays on the chip's title attribute. */
+.chip-star{color:var(--gold)}
+.chip-label{max-width:15ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip-edit{max-width:15ch;background:#0d142a;border:1px solid var(--gold);border-radius:4px;
+  color:var(--ink);font:inherit;font-size:12.5px;padding:1px 4px;outline:none}
 
 /* announcements (Phase 3 populates; hidden while empty) */
 .announce{margin-top:9px;font-size:12.5px;color:#c3cdf0;line-height:1.4}
