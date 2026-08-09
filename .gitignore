@@ -1,4 +1,5 @@
 .superpowers/
 dist/
 node_modules/
+release/
 spike/

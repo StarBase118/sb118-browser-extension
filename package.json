@@ -1,10 +1,11 @@
 {
   "name": "sb118-browser-extension",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "package": "node scripts/package.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
