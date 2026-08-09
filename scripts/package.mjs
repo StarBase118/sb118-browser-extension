@@ -14,17 +14,18 @@
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, rmSync, cpSync, readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { targets } from './targets.mjs'
 
 const root = resolve(process.cwd())
 const { version } = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
 
-for (const t of ['chromium', 'firefox']) {
+for (const t of targets) {
   const manifest = JSON.parse(
-    readFileSync(resolve(root, `src/manifest.${t}.json`), 'utf8')
+    readFileSync(resolve(root, t.manifest), 'utf8')
   )
   if (manifest.version !== version) {
     throw new Error(
-      `manifest.${t}.json is version ${manifest.version} but package.json is ${version} — bump both`
+      `${t.manifest} is version ${manifest.version} but package.json is ${version} — bump both`
     )
   }
 }
@@ -35,10 +36,10 @@ const releaseDir = resolve(root, 'release')
 rmSync(releaseDir, { recursive: true, force: true })
 mkdirSync(releaseDir, { recursive: true })
 
-for (const t of ['chromium', 'firefox']) {
-  const folder = `sb118-extension-${t}-${version}`
+for (const t of targets) {
+  const folder = `sb118-extension-${t.name}-${version}`
   const staged = resolve(releaseDir, folder)
-  cpSync(resolve(root, 'dist', t), staged, { recursive: true })
+  cpSync(resolve(root, 'dist', t.name), staged, { recursive: true })
   execFileSync('zip', ['-qr', `${folder}.zip`, folder], {
     cwd: releaseDir,
     stdio: 'inherit',

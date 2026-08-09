@@ -370,10 +370,17 @@ async function personalize() {
     for (const ann of anns as Array<{ title: string; url?: string }>) {
       const row = document.createElement('div'); row.className = 'a-item'
       const dot = document.createElement('span'); dot.className = 'a-dot'; dot.textContent = '◆'
-      const a = document.createElement('a'); a.textContent = ann.title; a.href = ann.url ?? '#'
-      a.style.color = 'inherit'; a.style.textDecoration = 'none'
-      if (ann.url) a.addEventListener('click', (e) => { e.preventDefault(); openUrl(ann.url!) })
-      row.append(dot, a); box.appendChild(row)
+      // Same rule as the "my stuff" chips: an announcement with no URL is text,
+      // not an <a href="#"> that looks clickable and goes nowhere.
+      const url = ann.url
+      const label = document.createElement(url ? 'a' : 'span')
+      label.textContent = ann.title
+      label.style.color = 'inherit'; label.style.textDecoration = 'none'
+      if (url) {
+        ;(label as HTMLAnchorElement).href = url
+        label.addEventListener('click', (e) => { e.preventDefault(); openUrl(url) })
+      }
+      row.append(dot, label); box.appendChild(row)
     }
     document.getElementById('announce')!.hidden = false
   }

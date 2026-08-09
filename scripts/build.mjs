@@ -1,13 +1,9 @@
 import { build } from 'vite'
 import { cpSync, mkdirSync, rmSync, copyFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { targets } from './targets.mjs'
 
 const root = resolve(process.cwd())
-const targets = [
-  { name: 'chromium', manifest: 'src/manifest.chromium.json' },
-  { name: 'firefox', manifest: 'src/manifest.firefox.json' },
-]
-
 for (const t of targets) {
   const outDir = resolve(root, 'dist', t.name)
   rmSync(outDir, { recursive: true, force: true })
