@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "StarBase 118",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Quick access to StarBase 118 — HQ, wiki, Discord, and your ship & character.",
   "action": { "default_popup": "popup/popup.html", "default_title": "StarBase 118" },
   "background": { "service_worker": "background.js", "type": "module" },

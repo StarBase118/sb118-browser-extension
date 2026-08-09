@@ -34,6 +34,19 @@ it. Issue templates for this round: `.github/ISSUE_TEMPLATE/test_feedback.yml` (
 `staff test`, `known gap`, `area: badge/search/launcher/options/build/hq-endpoint`, `firefox`,
 `chromium`.
 
+### v0.2.1 — staff test build, feedback round 1 (2026-08-09)
+
+Same distribution as v0.2.0: a **GitHub Release**, marked prerelease, two zips.
+Testers replace the folder they loaded and hit reload on the extensions page.
+
+**Zips are now built by `npm run package`**, not by hand. It rebuilds both targets
+into `release/` (gitignored) as `sb118-extension-<target>-<version>.zip`, each
+unpacking to one clearly-named folder — testers point "Load unpacked" at a folder,
+so loose files at the zip root are a support burden. It **fails the build if a
+manifest's version doesn't match `package.json`**, which is the one thing that is
+easy to half-do: a version lives in three files (`package.json`,
+`src/manifest.chromium.json`, `src/manifest.firefox.json`) and all three must move.
+
 ### Staff-test feedback round 1 (Jalana, topic 4180 #2) — fixed
 
 Two reports, one of which was an HQ bug rather than an extension bug:
