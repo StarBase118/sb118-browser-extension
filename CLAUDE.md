@@ -34,6 +34,25 @@ it. Issue templates for this round: `.github/ISSUE_TEMPLATE/test_feedback.yml` (
 `staff test`, `known gap`, `area: badge/search/launcher/options/build/hq-endpoint`, `firefox`,
 `chromium`.
 
+### Staff-test feedback round 1 (Jalana, topic 4180 #2) — fixed
+
+Two reports, one of which was an HQ bug rather than an extension bug:
+
+- **A pinned tab showed the whole page title.** Labels come from `tab.title` and
+  nothing ever wrote them again. Pins now render through `src/lib/pin-chip.ts`:
+  the label is truncated in CSS (`.chip-label`) with the full text on the chip's
+  `title`, and a ✎ button edits it in place (`renamePin()` in `src/lib/pins.ts`).
+  **The rename edits in place rather than calling `prompt()`** — a modal raised
+  from a browser-action popup can dismiss the popup underneath it.
+- **The ship chip opened the HQ dashboard instead of the ship's wiki page.** Root
+  cause was in HQ, not here: `/api/me` hardcoded `ship: { wikiUrl: null }` while
+  the character beside it resolved a real URL. Fixed by `resolveShipWikiUrl()` in
+  megatool's `src/lib/member-context.ts`, reading `ships.wiki_url` (populated for
+  all 11 fleet rows). The extension's half was a silent
+  `url ?? 'https://hq.starbase118.net'` fallback that turned a missing URL into a
+  working-looking link to the wrong place — a chip with no URL now renders as
+  plain text (`.chip.nolink`).
+
 **Open before this can go further:**
 1. **Firefox two-browser smoke test** — Jordan needs to load `dist/firefox` while signed
    into HQ and confirm the login light goes green (proves Firefox carries the session

@@ -10,7 +10,7 @@ vi.mock('webextension-polyfill', () => ({
   },
 }))
 
-import { getPins, addPin, removePin } from '@/lib/pins'
+import { getPins, addPin, removePin, renamePin, MAX_PIN_LABEL } from '@/lib/pins'
 
 beforeEach(() => { for (const k of Object.keys(store)) delete store[k] })
 
@@ -28,5 +28,50 @@ describe('pins', () => {
   it('caps at 20', async () => {
     for (let i = 0; i < 25; i++) await addPin({ label: `p${i}`, url: `https://x/${i}` })
     expect((await getPins()).length).toBe(20)
+  })
+  it('trims and caps an over-long label on add', async () => {
+    const long = '  ' + 'z'.repeat(MAX_PIN_LABEL + 40) + '  '
+    const after = await addPin({ label: long, url: 'https://x/long' })
+    expect(after[0].label).toBe('z'.repeat(MAX_PIN_LABEL))
+  })
+})
+
+describe('renamePin', () => {
+  it('renames the matching pin and leaves the others alone', async () => {
+    await addPin({ label: 'A', url: 'https://x/1' })
+    await addPin({ label: 'B', url: 'https://x/2' })
+    const after = await renamePin('https://x/1', 'Wiki bio')
+    expect(after.find((p) => p.url === 'https://x/1')!.label).toBe('Wiki bio')
+    expect(after.find((p) => p.url === 'https://x/2')!.label).toBe('B')
+  })
+  it('persists the rename', async () => {
+    await addPin({ label: 'A', url: 'https://x/1' })
+    await renamePin('https://x/1', 'Short')
+    expect((await getPins())[0].label).toBe('Short')
+  })
+  it('trims surrounding whitespace', async () => {
+    await addPin({ label: 'A', url: 'https://x/1' })
+    const after = await renamePin('https://x/1', '   Padded   ')
+    expect(after[0].label).toBe('Padded')
+  })
+  it('leaves the label alone when given a blank name', async () => {
+    await addPin({ label: 'A', url: 'https://x/1' })
+    const after = await renamePin('https://x/1', '   ')
+    expect(after[0].label).toBe('A')
+  })
+  it('caps an over-long new name', async () => {
+    await addPin({ label: 'A', url: 'https://x/1' })
+    const after = await renamePin('https://x/1', 'y'.repeat(MAX_PIN_LABEL + 40))
+    expect(after[0].label).toBe('y'.repeat(MAX_PIN_LABEL))
+  })
+  it('is a no-op for a url that is not pinned', async () => {
+    await addPin({ label: 'A', url: 'https://x/1' })
+    const after = await renamePin('https://x/nope', 'New')
+    expect(after).toEqual([{ label: 'A', url: 'https://x/1' }])
+  })
+  it('keeps the url unchanged', async () => {
+    await addPin({ label: 'A', url: 'https://x/1' })
+    const after = await renamePin('https://x/1', 'Renamed')
+    expect(after[0].url).toBe('https://x/1')
   })
 })

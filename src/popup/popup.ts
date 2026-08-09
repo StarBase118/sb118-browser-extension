@@ -1,6 +1,7 @@
 import browser from 'webextension-polyfill'
 import { MEMBER_LINKS, STAFF_LINKS } from '@/lib/launcher'
-import { getPins, addPin, removePin } from '@/lib/pins'
+import { getPins, addPin, removePin, renamePin } from '@/lib/pins'
+import { buildPinChip } from '@/lib/pin-chip'
 import { getProfile } from '@/lib/session'
 import { getPrefs, setPrefs } from '@/lib/prefs'
 import { buildFeedbackUrl } from '@/lib/feedback-link'
@@ -24,11 +25,11 @@ function openUrl(url: string) {
 }
 
 /**
- * Shared builder for every clickable link the popup renders (grid tiles,
- * pin chips, "my stuff" chips, staff grid) — a plain <a> or <span>+<a> that
- * opens in a new tab via openUrl() instead of navigating the popup itself.
- * Optional `icon`/`prefix` render a leading span/text; `onRemove` adds a
- * trailing ✕ button (used by pin chips).
+ * Shared builder for the plain links the popup renders (grid tiles, "my
+ * stuff" chips, staff grid) — an <a> that opens in a new tab via openUrl()
+ * instead of navigating the popup itself. Optional `icon`/`prefix` render a
+ * leading span/text. Pin chips have their own builder (buildPinChip), since
+ * they carry rename and unpin controls.
  */
 function renderLink(opts: {
   label: string
@@ -36,7 +37,6 @@ function renderLink(opts: {
   className?: string
   icon?: string
   prefix?: string
-  onRemove?: () => void | Promise<void>
 }): HTMLAnchorElement {
   const a = document.createElement('a')
   if (opts.className) a.className = opts.className
@@ -49,11 +49,6 @@ function renderLink(opts: {
   }
   a.appendChild(document.createTextNode((opts.prefix ?? '') + opts.label))
   a.addEventListener('click', (e) => { e.preventDefault(); openUrl(opts.url) })
-  if (opts.onRemove) {
-    const x = document.createElement('button'); x.textContent = '✕'; x.className = 'x'
-    x.addEventListener('click', async (e) => { e.stopPropagation(); e.preventDefault(); await opts.onRemove!() })
-    a.appendChild(x)
-  }
   return a
 }
 
@@ -66,12 +61,10 @@ async function renderPins() {
   const box = document.getElementById('pinchips')!
   box.innerHTML = ''
   for (const p of await getPins()) {
-    box.appendChild(renderLink({
-      label: p.label,
-      url: p.url,
-      className: 'chip',
-      prefix: '★ ',
-      onRemove: async () => { await removePin(p.url); renderPins() },
+    box.appendChild(buildPinChip(p, {
+      onOpen: openUrl,
+      onRemove: async (url) => { await removePin(url); renderPins() },
+      onRename: async (url, label) => { await renamePin(url, label); renderPins() },
     }))
   }
   const add = document.createElement('button'); add.className = 'chip add'; add.textContent = '＋ Pin tab'
@@ -349,9 +342,23 @@ async function personalize() {
   }
 
   const mine = document.getElementById('mychips')!
+  /**
+   * A chip with no wiki URL renders as plain text, not a link to HQ's front
+   * page. Falling back to the dashboard made a missing `ship.wikiUrl` look
+   * like a working link that goes somewhere unrelated — reported in the staff
+   * test round, where clicking a ship name landed on the HQ dashboard.
+   */
   const addChip = (emoji: string, name: string | null, url: string | null) => {
     if (!name) return
-    mine.appendChild(renderLink({ label: name, url: url ?? 'https://hq.starbase118.net', className: 'chip', prefix: `${emoji} ` }))
+    if (!url) {
+      const span = document.createElement('span')
+      span.className = 'chip nolink'
+      span.title = `No wiki page on file for ${name}`
+      span.textContent = `${emoji} ${name}`
+      mine.appendChild(span)
+      return
+    }
+    mine.appendChild(renderLink({ label: name, url, className: 'chip', prefix: `${emoji} ` }))
   }
   addChip('👤', profile.character?.name ?? null, profile.character?.wikiUrl ?? prefs.manualCharacterUrl ?? null)
   addChip('🚀', profile.ship?.name ?? null, profile.ship?.wikiUrl ?? prefs.manualShipUrl ?? null)
