@@ -43,10 +43,10 @@ The conflict: the popup marks everything seen the instant it opens. That was har
 the badge was only a number — nothing was on screen to lose. The moment items are listed,
 it means **the "3" you clicked is already cleared by the time you look at the list.**
 
-**Resolved:** the popup computes the new-set from `notifLastSeen` **before** it sends
-`notif:seen`, and holds that set in a module-level variable for the lifetime of that popup.
-The marker then advances exactly as it does today. Dots stay lit for the visit that revealed
-them and are gone next time.
+**Resolved:** the popup computes the new-set from `notifLastSeen` **before** it advances the
+marker, and holds that set in a module-level variable for the lifetime of that popup. The
+marker then advances as it does today. Dots stay lit for the visit that revealed them and
+are gone next time.
 
 **This needs no new storage.** An earlier sketch proposed a second "pending seen" marker;
 it is not necessary, because the popup lives for a single viewing and the rendered set is
@@ -54,16 +54,30 @@ captured before the marker moves. Holding the set in memory rather than recomput
 means a re-render inside the same popup (which the pins section already does) cannot make
 the dots vanish mid-visit.
 
-**`markAllSeen()` must stop refetching.** Today it fetches a fresh payload and advances the
-markers to *its* newest timestamps. Once the popup renders a cache, those are two different
-payloads: an item that arrived between the worker's last poll and the popup opening would be
-marked seen without ever having been shown, and would never be dotted again. It is a narrow
-window, but it silently loses exactly the thing this phase exists to surface.
+**`markAllSeen()` is deleted, and the popup advances the marker itself.**
 
-Renamed to **`markSeenFromCache()`**: it advances the markers using `notifItems` — the same
-cached payload the popup rendered — so what is marked seen and what was displayed cannot
-diverge. If the cache is empty it does nothing rather than clearing markers against no data.
-The `notif:seen` message name stays, so no other caller changes.
+Today `markAllSeen()` lives in the worker, fetches a fresh payload, and advances the markers
+to *its* newest timestamps. Once the popup renders a cache those are two different payloads:
+an item arriving between the worker's last poll and the popup opening would be marked seen
+without ever having been shown, and would never be dotted again.
+
+Moving the fetch out is not enough. A worker that reads `notifItems` when the message
+arrives is still reading it *later* than the popup rendered it, and the message carries
+nothing that identifies which snapshot was on screen — a poll landing in between puts the
+worker back on a payload the member never saw. Passing timestamps in the message would fix
+it, but only by shipping the snapshot through an extra hop.
+
+**The popup already holds the exact snapshot it rendered, and can already write storage.**
+So it computes `advanceLastSeen(current, renderedSources, enabled)` from that snapshot and
+calls `setLastSeen()` directly, immediately after rendering. There is no race left to lose,
+because there is no second read.
+
+It then sends **`notif:refresh`**, which the worker already implements: re-poll, re-count
+against the marker the popup just wrote, update the badge. If something genuinely new
+arrived in the meantime, the badge correctly shows it rather than being forced to zero.
+
+`markAllSeen()` and the `notif:seen` message are removed entirely. One message type, one
+writer per piece of state, and a deletion rather than an addition.
 
 **The trade, stated plainly:** a member who opens the popup and does not read the items
 loses the marks anyway. That is inherent to "opening is reading" and is what the alternative
@@ -111,7 +125,7 @@ background.ts            popup.ts
     fetch  ──────┐           │  reads notifItems + notifLastSeen + prefs
     countNew()   │           │  buildNotificationList()  ← pure
     setBadge()   │           │  render rows, dots from the captured set
-    setCachedItems(payload)  │  send notif:seen (marker advances)
+    setCachedItems(payload)  │  setLastSeen(from that snapshot), then notif:refresh
                  │           ▼
           storage.local: notifItems, notifCount, notifLastSeen
 ```
@@ -185,8 +199,15 @@ Rules, in order:
 ### Store — `src/lib/notifications-store.ts`
 
 Adds `getCachedItems()` / `setCachedItems()` for key `notifItems`, validated on read with
-the same shape guard `notifications-client.ts` already uses, so a corrupt or half-written
-cache degrades to "no items" rather than throwing inside the popup render.
+the same shape guard `notifications-client.ts` already uses.
+
+**`getCachedItems()` returns `null` for absent, unparseable, or shape-invalid data, and a
+payload object otherwise — including an empty one.** The distinction is load-bearing:
+`null` means "we have not successfully looked", which is the Checking state, and an empty
+payload means "we looked and there was nothing", which is Quiet. Collapsing corrupt data
+into an empty payload would tell a member "nothing new" on the strength of a cache we could
+not read. A corrupt cache is therefore treated exactly like an absent one — show Checking
+and refresh, which also repairs it.
 
 ### Worker — `src/background.ts`
 
@@ -196,7 +217,8 @@ alone, so a transient HQ failure cannot blank a list the member could otherwise 
 
 ### Popup — `src/popup/popup.ts`
 
-`renderNotifications()` runs on `DOMContentLoaded` before `notif:seen` is sent. Each row is
+`renderNotifications()` runs on `DOMContentLoaded` and advances the marker only after the
+rows are in the DOM. Each row is
 an `<a>` built through the existing `renderLink` pattern: opens via `openUrl()` in a new
 tab, closes the popup. Row contents: a dot (empty span when not new, so rows stay aligned),
 the title, and a muted line with the source label and a relative time.
@@ -207,20 +229,28 @@ source label alone, with no time**, rather than being passed to the formatter, w
 produce "NaN days ago" or throw inside the render. The item is still listed and still
 clickable; only its timestamp is missing, because only its timestamp is broken.
 
-### The four states, and exactly what each says
+### The five states, and exactly what each says
 
 Defined here so the implementation and the end-to-end assertions cannot drift apart:
 
 | State | Condition | Popup shows |
 |---|---|---|
-| Items | `state: 'ok'`, one or more items | The list |
-| Quiet | `state: 'ok'`, zero items | Section present, one muted line: **"Nothing new right now."** |
-| Checking | Cache key absent — fresh install, worker has not polled | **"Checking for updates…"**, and fire `notif:refresh` |
+| Items | `getCachedItems()` non-null, `state: 'ok'`, one or more items | The list |
+| Quiet | `getCachedItems()` non-null, `state: 'ok'`, zero items | Section present, one muted line: **"Nothing new right now."** |
+| Checking | `getCachedItems()` returns `null` — absent or corrupt cache | **"Checking for updates…"**, and fire `notif:refresh` |
 | Outage | `state: 'outage'` | **"Couldn't reach HQ — this list may be out of date."** |
 | Off | `state: 'disabled'` | Section hidden entirely |
 
-"Checking" is distinct from "quiet" on purpose: an absent cache means we have not looked
-yet, and saying "nothing new" would be a claim we have not earned.
+Checking is deliberately distinct from Quiet: a null cache means we have not successfully
+looked, and "nothing new" would be a claim we have not earned. Note the two are told apart
+by the **getter's return value**, not by the length of the item list — a present, healthy,
+empty payload is Quiet, not Checking.
+
+**Checking does not resolve inside the open popup.** `notif:refresh` primes the cache for
+the next opening; it does not re-render a popup that is already on screen. Re-rendering
+mid-view would also mean advancing the marker a second time against a payload the member
+may not have looked at. A fresh install therefore shows Checking once and the real list on
+the following open, and Phase 3 already has this shape — the badge behaves the same way.
 
 ## Testing
 
@@ -251,12 +281,17 @@ the v0.2.2 add-link work; it loads `dist/chromium` in a persistent context):
 - assert the dots survive a pins re-render inside the same popup
 - assert a row's click target is the item's real `url`
 - assert an item with a broken `at` renders its title and source with no time, not "NaN"
-- seed an empty cache and assert the "checking" line rather than a blank section
+- **no cache key at all** → the Checking line, not a blank section
+- **a corrupt cache value** (a string where the payload belongs) → also Checking, proving
+  corrupt is treated as absent rather than as empty
+- **a present but empty payload** → the Quiet line, proving Quiet and Checking are told
+  apart by the getter's return value and not by item count
 - seed all-unavailable and assert the outage line
-- seed zero items with sources healthy and assert the quiet line, not the outage line
-- **assert `notif:seen` advances the markers to the cached payload's newest timestamps, not
-  to a fresher one** — write a newer item to the cache after the popup has rendered, send
-  the message, and confirm that item is still dotted on the next open
+- switch every source off and assert the section is absent, not an outage
+- **assert the marker is advanced from the rendered snapshot:** open the popup against a
+  seeded cache, then write a newer item into `notifItems` while it is open, close and
+  reopen, and confirm that newer item is dotted — it was never displayed, so it must not
+  have been marked seen
 
 Unit tests that mock the thing under test are what let the Phase 3 sims bug ship — every
 test mocked `listShipSims`, so the source returned empty for every member and nothing
