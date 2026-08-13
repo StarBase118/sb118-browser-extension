@@ -1,4 +1,4 @@
-# Staff test round — v0.2.0
+# Staff test round
 
 Thanks for trying this. It is a real working extension, not a mockup, but it has not been
 through the browser stores yet, so installing it takes about two minutes and a couple of
@@ -15,7 +15,7 @@ Download the build for your browser from
 
 ### Chrome, Edge or Brave
 
-1. Download `sb118-extension-chromium-0.2.0.zip` and unzip it.
+1. Download the `sb118-extension-chromium-*.zip` and unzip it.
 2. Put the unzipped folder somewhere you will not delete by accident — deleting it uninstalls
    the extension.
 3. Go to `chrome://extensions` (or `edge://extensions`).
@@ -27,7 +27,7 @@ expected for anything not installed from the store, and it goes away when we pub
 
 ### Firefox
 
-1. Download `sb118-extension-firefox-0.2.0.zip` and unzip it.
+1. Download the `sb118-extension-firefox-*.zip` and unzip it.
 2. Go to `about:debugging` → **This Firefox**.
 3. Click **Load Temporary Add-on** and choose the `manifest.json` inside the unzipped folder.
 
