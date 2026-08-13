@@ -61,12 +61,21 @@ export function buildNotificationList(
 
   const fresh: DisplayItem[] = []
   const seen: DisplayItem[] = []
-  let anyAvailable = false
+  let sawAvailable = false
+  let sawUnavailable = false
 
   for (const source of enabled) {
     const group = sources[source]
-    if (!group || group.unavailable) continue
-    anyAvailable = true
+    // A source that is simply ABSENT from the payload is not the same as one
+    // HQ flagged unavailable, and conflating them reports an outage for a
+    // perfectly healthy quiet payload — `{}` renders "couldn't reach HQ".
+    // Only an explicit unavailable flag is evidence that something failed.
+    if (!group) continue
+    if (group.unavailable) {
+      sawUnavailable = true
+      continue
+    }
+    sawAvailable = true
 
     for (const item of group.items) {
       const display: DisplayItem = { ...item, source, isNew: isItemNew(item, lastSeen[source]) }
@@ -74,7 +83,7 @@ export function buildNotificationList(
     }
   }
 
-  if (!anyAvailable) return { items: [], state: 'outage' }
+  if (!sawAvailable && sawUnavailable) return { items: [], state: 'outage' }
 
   fresh.sort(newestFirst)
   seen.sort(newestFirst)

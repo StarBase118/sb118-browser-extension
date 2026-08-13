@@ -120,6 +120,28 @@ describe('buildNotificationList', () => {
     expect(r.items).toEqual([])
   })
 
+  // An entirely empty payload is every source ABSENT, not every source flagged
+  // unavailable. Conflating the two reported an outage for a healthy quiet
+  // cache — the end-to-end run caught it because the case above was written
+  // with a present-but-empty group, which takes a different branch.
+  it('is ok, not an outage, for a payload with no sources at all', () => {
+    const r = buildNotificationList({}, {}, ALL)
+    expect(r.state).toBe('ok')
+    expect(r.items).toEqual([])
+  })
+
+  it('still renders items when only some sources are unavailable', () => {
+    const r = buildNotificationList(
+      {
+        news: { items: [item('n1', '2026-08-13T09:00:00Z')] },
+        sims: { items: [], unavailable: true },
+      },
+      {}, ALL
+    )
+    expect(r.state).toBe('ok')
+    expect(r.items.map((i) => i.id)).toEqual(['n1'])
+  })
+
   // The disabled check must come first, or someone who switched everything off
   // is told HQ is broken.
   it('is disabled, not an outage, when no sources are enabled', () => {
