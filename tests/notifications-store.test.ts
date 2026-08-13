@@ -10,7 +10,6 @@ vi.mock('webextension-polyfill', () => ({
 }))
 
 import {
-  getCachedCount,
   getCachedItems,
   getLastSeen,
   setCachedCount,
@@ -35,18 +34,11 @@ describe('notifications store', () => {
     expect(await getLastSeen()).toEqual({})
   })
 
-  it('defaults cached count to zero', async () => {
-    expect(await getCachedCount()).toBe(0)
-  })
-
-  it('round-trips cached count', async () => {
+  // notifCount is write-only now — the badge is set from the count the worker
+  // just computed, and the getter's only reader was the deleted explainer.
+  it('writes the cached count for the worker', async () => {
     await setCachedCount(4)
-    expect(await getCachedCount()).toBe(4)
-  })
-
-  it('ignores malformed cached count storage', async () => {
-    store.notifCount = '4'
-    expect(await getCachedCount()).toBe(0)
+    expect(store.notifCount).toBe(4)
   })
 })
 
