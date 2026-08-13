@@ -3,12 +3,14 @@ import { MEMBER_LINKS, STAFF_LINKS } from '@/lib/launcher'
 import { getPins, addPin, removePin, renamePin, normalizePinUrl } from '@/lib/pins'
 import { buildPinChip } from '@/lib/pin-chip'
 import { getProfile } from '@/lib/session'
-import { getPrefs, setPrefs } from '@/lib/prefs'
+import { getPrefs, enabledSources } from '@/lib/prefs'
 import { buildFeedbackUrl } from '@/lib/feedback-link'
 import { getNav, syncNavCache } from '@/lib/nav-cache'
 import { destinationGroup } from '@/lib/destinations'
 import { runSearch, pendingSources, type SearchContext } from '@/lib/search'
-import { getCachedCount } from '@/lib/notifications-store'
+import { getCachedItems, getLastSeen, setLastSeen } from '@/lib/notifications-store'
+import { advanceLastSeen } from '@/lib/notification-count'
+import { buildNotificationList, type DisplayItem } from '@/lib/notification-list'
 import { SOURCE_LABELS as NOTIF_SOURCE_LABELS } from '@/lib/notifications-types'
 import {
   DEBOUNCE_MS,
@@ -347,41 +349,117 @@ function wireSearch() {
   input.focus()
 }
 
-async function renderNotificationIntro() {
-  const count = await getCachedCount()
-  const prefs = await getPrefs()
+const RELATIVE = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ['year', 31536000000], ['month', 2592000000], ['day', 86400000],
+  ['hour', 3600000], ['minute', 60000],
+]
 
-  // Wait for the first non-zero badge before explaining it; showing this on
-  // install would describe a number the member has not seen yet.
-  if (count <= 0 || prefs.notifIntroDismissed === true) return
+/**
+ * A relative time, or null when the timestamp will not parse — passing NaN to
+ * the formatter yields "NaN days ago" or throws mid-render. The item is still
+ * listed and still clickable; only its time is missing, because only its time
+ * is broken.
+ */
+function relativeTime(iso: string): string | null {
+  const ms = Date.parse(iso)
+  if (Number.isNaN(ms)) return null
+  const diff = ms - Date.now()
+  for (const [unit, size] of UNITS) {
+    if (Math.abs(diff) >= size) return RELATIVE.format(Math.round(diff / size), unit)
+  }
+  return RELATIVE.format(0, 'minute')
+}
 
-  const box = document.getElementById('notif-intro')!
+function buildNotifRow(item: DisplayItem): HTMLAnchorElement {
+  const a = document.createElement('a')
+  a.className = item.isNew ? 'n-row is-new' : 'n-row'
+  a.href = item.url
+  a.title = item.title
+
+  const dot = document.createElement('span')
+  dot.className = 'n-dot'
+  if (item.isNew) dot.setAttribute('aria-label', 'New')
+
+  const body = document.createElement('span')
+  body.className = 'n-body'
+
+  const title = document.createElement('span')
+  title.className = 'n-title'
+  title.textContent = item.title
+
+  const meta = document.createElement('span')
+  meta.className = 'n-meta'
+  const src = document.createElement('span')
+  src.className = 'n-src'
+  src.textContent = NOTIF_SOURCE_LABELS[item.source]
+  meta.appendChild(src)
+  const when = relativeTime(item.at)
+  if (when) meta.appendChild(document.createTextNode(` · ${when}`))
+
+  body.append(title, meta)
+  a.append(dot, body)
+  a.addEventListener('click', (e) => { e.preventDefault(); openUrl(item.url) })
+  return a
+}
+
+function notifNote(text: string): HTMLElement {
+  const p = document.createElement('div')
+  p.className = 'n-note'
+  p.textContent = text
+  return p
+}
+
+/**
+ * Render the section, then advance the marker.
+ *
+ * The order is the feature. The new-set is computed from the marker as it
+ * stands, rendered, and only then does the marker move — so the items the
+ * badge was counting are still dotted when the member looks at them, and are
+ * clear next time.
+ *
+ * The popup advances the marker itself rather than asking the worker to,
+ * because only the popup knows which snapshot was on screen: a worker reading
+ * the cache when a message arrives reads it later, and a poll landing in
+ * between would mark an item seen that was never displayed.
+ */
+async function renderNotifications(): Promise<void> {
+  const section = document.getElementById('notifs')!
+  const box = document.getElementById('notiflist')!
   box.innerHTML = ''
 
-  const text = document.createElement('span')
-  text.textContent = `The badge counts new ${NOTIF_SOURCE_LABELS.announcements}, ${NOTIF_SOURCE_LABELS.sims}, and ${NOTIF_SOURCE_LABELS.news}. You can switch any source off in `
+  const [cached, prefs] = await Promise.all([getCachedItems(), getPrefs()])
+  const enabled = enabledSources(prefs)
 
-  const options = document.createElement('a')
-  options.href = '#'
-  options.textContent = 'notification settings'
-  options.addEventListener('click', async (e) => {
-    e.preventDefault()
-    await browser.runtime.openOptionsPage()
+  if (!enabled.length) { section.hidden = true; return }
+  section.hidden = false
+
+  if (cached === null) {
+    box.appendChild(notifNote('Checking for updates…'))
+    void browser.runtime.sendMessage({ type: 'notif:refresh' }).catch(() => {})
+    return
+  }
+
+  const lastSeen = await getLastSeen()
+  const { items, state } = buildNotificationList(cached, lastSeen, enabled)
+
+  if (state === 'disabled') { section.hidden = true; return }
+  if (state === 'outage') {
+    box.appendChild(notifNote('Couldn’t reach HQ — this list may be out of date.'))
+    return
+  }
+  if (!items.length) {
+    box.appendChild(notifNote('Nothing new right now.'))
+    return
+  }
+
+  for (const item of items) box.appendChild(buildNotifRow(item))
+
+  // Only now, and only from the payload just rendered.
+  await setLastSeen(advanceLastSeen(lastSeen, cached, enabled))
+  void browser.runtime.sendMessage({ type: 'notif:refresh' }).catch(() => {
+    // The worker may be asleep; the next alarm reconciles the badge.
   })
-
-  const suffix = document.createElement('span')
-  suffix.textContent = '.'
-
-  const dismiss = document.createElement('button')
-  dismiss.type = 'button'
-  dismiss.textContent = 'Dismiss'
-  dismiss.addEventListener('click', async () => {
-    await setPrefs({ notifIntroDismissed: true })
-    box.hidden = true
-  })
-
-  box.append(text, options, suffix, dismiss)
-  box.hidden = false
 }
 
 /* ----------------------------------------------------------- launcher UI */
@@ -474,10 +552,5 @@ document.addEventListener('DOMContentLoaded', () => {
   renderGrid(document.getElementById('grid')!, MEMBER_LINKS)
   wireReportIssue()
   wireSearch()
-  Promise.all([renderPins(), personalize()])
-  void renderNotificationIntro().finally(() => {
-    void browser.runtime.sendMessage({ type: 'notif:seen' }).catch(() => {
-      // The worker may be asleep; the next alarm reconciles storage and badge.
-    })
-  })
+  Promise.all([renderPins(), personalize(), renderNotifications()])
 })
