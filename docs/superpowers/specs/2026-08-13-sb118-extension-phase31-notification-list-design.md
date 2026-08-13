@@ -223,6 +223,14 @@ an `<a>` built through the existing `renderLink` pattern: opens via `openUrl()` 
 tab, closes the popup. Row contents: a dot (empty span when not new, so rows stay aligned),
 the title, and a muted line with the source label and a relative time.
 
+**The section heading is "New for you".** It is the same heading whether or not anything is
+new, matching decision 3 — the heading is the section's name, not a status.
+
+**Titles are truncated in CSS, never in storage or in the builder**, with the full text on
+the row's `title` attribute. This is the rule the pin chips already follow, established when
+a page title swamped a chip in feedback round 1: two lines maximum via `-webkit-line-clamp`,
+so a long sim subject wraps once and then ellipses rather than pushing the launcher down.
+
 Relative time is formatted with `Intl.RelativeTimeFormat` — already available, no
 dependency, and correct in the member's locale. **An `at` that will not parse renders the
 source label alone, with no time**, rather than being passed to the formatter, which would
@@ -272,6 +280,14 @@ the following open, and Phase 3 already has this shape — the badge behaves the
 - `state` is `'disabled'` when no sources are enabled, even if the payload is full and every
   source is flagged unavailable — the disabled check comes first
 - an item with an unparseable `at` sorts last within its group and is not dropped
+
+**Unit — `tests/notifications-store.test.ts`** (added to the existing file):
+
+- a stored payload with valid but empty sources round-trips as an empty payload, **not**
+  `null` — the Quiet-versus-Checking distinction lives or dies on this
+- a malformed stored value (a string, an array, a payload whose items lack `url`) returns
+  `null`
+- an absent key returns `null`
 
 **End-to-end — Playwright against the built extension** (the same harness used to verify
 the v0.2.2 add-link work; it loads `dist/chromium` in a persistent context):

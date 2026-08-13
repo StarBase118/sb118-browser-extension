@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 3.1 — Listing the notifications</title>
+<style>
+  :root {
+    --gutter: 1.5rem; --inset: 1.7rem;
+    --bg: #0d1120; --panel: #141b33; --line: #28325a;
+    --ink: #e7ecff; --muted: #93a1c9; --gold: #d0a24a; --blue: #6aa9ff;
+    --ok: #4ade80; --warn: #e0684a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 16.5px; line-height: 1.62; }
+  .wrap { max-width: 60rem; margin-left: auto; margin-right: auto;
+    padding-left: var(--gutter); padding-right: var(--gutter); }
+  header { background: linear-gradient(180deg, #18203c, #141a2e);
+    border-bottom: 1px solid var(--line); box-shadow: inset 0 -3px 0 0 var(--gold);
+    padding-top: 2.6rem; padding-bottom: 2.4rem; }
+  header .wrap { padding-left: calc(var(--gutter) + var(--inset));
+    padding-right: calc(var(--gutter) + var(--inset)); }
+  header h1 { margin: 0 0 .5rem; font-size: 2rem; letter-spacing: -.01em; }
+  header p { margin: 0; color: var(--muted); max-width: 44rem; }
+  .kicker { display: inline-block; font-size: .72rem; font-weight: 800; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--gold); margin-bottom: .7rem; }
+  main.wrap { padding-top: 3.25rem; padding-bottom: 5rem; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 1.5rem var(--inset) 1.7rem; margin-bottom: 1.5rem; }
+  .card > :first-child { margin-top: 0; }
+  .card > :last-child { margin-bottom: 0; }
+  h2 { font-size: 1.32rem; margin: 0 0 .9rem; letter-spacing: -.01em; }
+  h3 { font-size: 1.02rem; margin: 1.5rem 0 .5rem; color: var(--blue); }
+  p, li { color: #d3dbf5; }
+  .muted { color: var(--muted); }
+  code { background: #0b1024; border: 1px solid #222c50; border-radius: 4px;
+    padding: .09em .38em; font-size: .87em; color: #cfe0ff; }
+  .quote { border-left: 3px solid var(--gold); padding: .2rem 0 .2rem 1.1rem;
+    margin: 1rem 0; color: var(--muted); font-style: italic; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1rem; }
+  .mini { background: #0f1630; border: 1px solid #222c50; border-radius: 9px; padding: 1rem 1.1rem; }
+  .mini h4 { margin: 0 0 .35rem; font-size: .95rem; }
+  .mini p { margin: 0; font-size: .92rem; color: var(--muted); }
+  .tag { display: inline-block; font-size: .68rem; font-weight: 800; letter-spacing: .1em;
+    text-transform: uppercase; padding: .18em .55em; border-radius: 4px; margin-bottom: .5rem; }
+  .tag.pick { background: rgba(74,222,128,.15); color: var(--ok); border: 1px solid rgba(74,222,128,.3); }
+  .tag.drop { background: rgba(148,161,201,.12); color: var(--muted); border: 1px solid rgba(148,161,201,.25); }
+  .tag.bug { background: rgba(224,104,74,.15); color: var(--warn); border: 1px solid rgba(224,104,74,.32); }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .93rem; min-width: 34rem; }
+  th, td { text-align: left; padding: .6rem .8rem; border-bottom: 1px solid #222c50; vertical-align: top; }
+  th { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .09em; }
+  .flow { display: flex; gap: .8rem; flex-wrap: wrap; align-items: stretch; margin: 1rem 0 0; }
+  .step { flex: 1 1 12rem; background: #0f1630; border: 1px solid #222c50; border-radius: 9px;
+    padding: .85rem 1rem; font-size: .9rem; }
+  .step b { display: block; color: var(--gold); font-size: .74rem; letter-spacing: .09em;
+    text-transform: uppercase; margin-bottom: .3rem; }
+  svg { max-width: 100%; height: auto; display: block; }
+  ul { padding-left: 1.15rem; }
+  li { margin-bottom: .38rem; }
+  @media (max-width: 40rem) { :root { --inset: 1.1rem; } header h1 { font-size: 1.6rem; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="kicker">SB118 browser extension · design spec</span>
+    <h1>Phase 3.1 — listing the notifications</h1>
+    <p>The badge says “3”. Nothing tells you what the 3 are. This closes that, and nothing else.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="card">
+    <h2>Where this came from</h2>
+    <p>Lhandon Nilsen, in the staff test thread, with a hand-drawn mockup attached:</p>
+    <div class="quote">I did notice that there was a notification number, just like on an app,
+      but when I clicked it, it didn’t show me where that was.</div>
+    <p>Phase 3 shipped the badge deliberately without the list — the scope line was documented
+      everywhere testers would look. It is now the most-asked-for thing in the test round.</p>
+    <p class="muted">Nothing changes in HQ. <code>GET /api/me/notifications</code> already returns
+      every item with a title, a url and a timestamp; the worker was simply counting them and
+      throwing them away.</p>
+  </div>
+
+  <div class="card">
+    <h2>The problem that had to be solved first</h2>
+    <p>Opening the popup marks everything read. That was harmless when the badge was only a
+      number — there was nothing on screen to lose. The moment items are listed, it means
+      <strong>the “3” you clicked is already cleared by the time your eyes reach the list.</strong></p>
+
+    <svg viewBox="0 0 720 190" role="img" aria-label="Before: opening the popup clears the markers immediately. After: the popup captures which items are new, renders them, and only then advances the marker.">
+      <defs>
+        <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+          <path d="M0,0 L9,4.5 L0,9 z" fill="#93a1c9"/>
+        </marker>
+      </defs>
+      <text x="0" y="16" fill="#e0684a" font-size="12" font-weight="700" font-family="system-ui">BEFORE — the marker moves first</text>
+      <rect x="0" y="28" width="150" height="42" rx="7" fill="#0f1630" stroke="#222c50"/>
+      <text x="14" y="54" fill="#d3dbf5" font-size="12.5" font-family="system-ui">popup opens</text>
+      <line x1="152" y1="49" x2="196" y2="49" stroke="#93a1c9" stroke-width="1.5" marker-end="url(#ar)"/>
+      <rect x="200" y="28" width="185" height="42" rx="7" fill="#2a1a1c" stroke="#5c2b2b"/>
+      <text x="214" y="54" fill="#e0684a" font-size="12.5" font-family="system-ui">marker advances</text>
+      <line x1="387" y1="49" x2="431" y2="49" stroke="#93a1c9" stroke-width="1.5" marker-end="url(#ar)"/>
+      <rect x="435" y="28" width="240" height="42" rx="7" fill="#0f1630" stroke="#222c50"/>
+      <text x="449" y="54" fill="#93a1c9" font-size="12.5" font-family="system-ui">list renders — nothing is new</text>
+
+      <text x="0" y="112" fill="#4ade80" font-size="12" font-weight="700" font-family="system-ui">AFTER — the set is captured first</text>
+      <rect x="0" y="124" width="150" height="42" rx="7" fill="#0f1630" stroke="#222c50"/>
+      <text x="14" y="150" fill="#d3dbf5" font-size="12.5" font-family="system-ui">popup opens</text>
+      <line x1="152" y1="145" x2="196" y2="145" stroke="#93a1c9" stroke-width="1.5" marker-end="url(#ar)"/>
+      <rect x="200" y="124" width="185" height="42" rx="7" fill="#122a1c" stroke="#2b5c3a"/>
+      <text x="214" y="150" fill="#4ade80" font-size="12.5" font-family="system-ui">capture + render dots</text>
+      <line x1="387" y1="145" x2="431" y2="145" stroke="#93a1c9" stroke-width="1.5" marker-end="url(#ar)"/>
+      <rect x="435" y="124" width="240" height="42" rx="7" fill="#0f1630" stroke="#222c50"/>
+      <text x="449" y="150" fill="#d3dbf5" font-size="12.5" font-family="system-ui">then the marker advances</text>
+    </svg>
+
+    <p style="margin-top:1.1rem">The new set is held in memory for the life of that one popup, so
+      a re-render inside the same visit cannot make the dots disappear. Dots stay lit for the visit
+      that revealed them, and are gone next time.</p>
+  </div>
+
+  <div class="card">
+    <h2>The four decisions</h2>
+    <div class="grid2">
+      <div class="mini"><span class="tag pick">Chosen</span>
+        <h4>New stays marked for the visit</h4>
+        <p>Rather than a bare recent list, or per-source “mark read” buttons that put three
+          headings between you and the launcher.</p></div>
+      <div class="mini"><span class="tag pick">Chosen</span>
+        <h4>Render the worker’s cache</h4>
+        <p>One fetch path instead of two, no loading state, and the list can never disagree
+          with the badge — it is the same data that produced the count.</p></div>
+      <div class="mini"><span class="tag pick">Chosen</span>
+        <h4>Always present</h4>
+        <p>Hiding it once everything is read would make the feature vanish exactly when
+          someone goes looking for it.</p></div>
+      <div class="mini"><span class="tag pick">Chosen</span>
+        <h4>Below the launcher grid</h4>
+        <p>This is a launcher that also reports what’s new. Most opens are “take me to HQ”,
+          and putting the list first pushes the pins off the bottom.</p></div>
+    </div>
+    <h3>Two things deleted rather than added</h3>
+    <div class="grid2">
+      <div class="mini"><span class="tag drop">Removed</span>
+        <h4>The first-run explainer</h4>
+        <p>It exists to explain a bare number. Once the items are on screen, the paragraph and
+          its Dismiss button stop earning their space.</p></div>
+      <div class="mini"><span class="tag drop">Removed</span>
+        <h4>“Mark all read”</h4>
+        <p>Opening the popup already marks everything read, so the button would do what had
+          just happened.</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Two real bugs the review caught</h2>
+    <p class="muted">The spec went past ChatGPT three times. Two of the findings were design
+      errors, not wording — both would have shipped.</p>
+
+    <h3><span class="tag bug">Would have shipped</span><br>Sorting by time and slicing drops unread items</h3>
+    <p>Markers are <em>per source</em>, so “new” is not a function of absolute time across the
+      whole list. If the sims marker is an hour old and the news marker is three days old, then
+      a <strong>read</strong> sim from five hours ago sorts above an <strong>unread</strong> news
+      item from two days ago. Cap the time-sorted list at eight and the unread item is the one
+      that falls off.</p>
+    <p>The fix is to partition new from old first, then fill the remaining slots — which also
+      puts new items at the top, where someone who just clicked a badge expects them.</p>
+
+    <h3><span class="tag bug">Would have shipped</span><br>The worker cannot know which snapshot you saw</h3>
+    <p>The first fix stopped the worker refetching. Not enough: a worker that reads the cache
+      when the message arrives still reads it <em>later</em> than the popup rendered it, and the
+      message carries nothing saying which snapshot was on screen. An item arriving in between
+      would be marked read without ever being displayed.</p>
+    <p>The popup already holds that snapshot and can already write storage, so it advances the
+      marker itself. <code>markAllSeen()</code> is deleted outright — one writer per piece of
+      state, and one less message type.</p>
+  </div>
+
+  <div class="card">
+    <h2>What the section says, in every state</h2>
+    <p class="muted">Written down so the code and the tests cannot drift apart.</p>
+    <div class="scroll">
+      <table>
+        <tr><th>State</th><th>When</th><th>Shows</th></tr>
+        <tr><td><strong>Items</strong></td><td>Cache readable, items present</td><td>The list, new ones dotted</td></tr>
+        <tr><td><strong>Quiet</strong></td><td>Cache readable, nothing in it</td><td>“Nothing new right now.”</td></tr>
+        <tr><td><strong>Checking</strong></td><td>Cache absent <em>or corrupt</em></td><td>“Checking for updates…” and a refresh</td></tr>
+        <tr><td><strong>Outage</strong></td><td>Every enabled source failed</td><td>“Couldn’t reach HQ — this list may be out of date.”</td></tr>
+        <tr><td><strong>Off</strong></td><td>Every source switched off</td><td>Nothing — the section is hidden</td></tr>
+      </table>
+    </div>
+    <p style="margin-top:1.1rem"><strong>Quiet and Checking are told apart by the getter’s return
+      value, not by how many items came back.</strong> A cache we could not read must never say
+      “nothing new” — that is a claim we have not earned. A corrupt cache is treated exactly like
+      a missing one, which also repairs it.</p>
+  </div>
+
+  <div class="card">
+    <h2>How it’s built</h2>
+    <div class="flow">
+      <div class="step"><b>Worker</b>Keeps the payload it already fetched instead of discarding it after counting.</div>
+      <div class="step"><b>New pure module</b><code>buildNotificationList()</code> — merge, flag new, partition, cap. No I/O, no DOM.</div>
+      <div class="step"><b>Popup</b>Renders rows, then advances the marker from what it just rendered.</div>
+    </div>
+    <h3>Why the core is a pure function</h3>
+    <p>The Phase 3 sims bug shipped because every unit test mocked <code>listShipSims</code>, so the
+      source returned empty for every member and no test noticed. <code>buildNotificationList</code>
+      takes plain data and returns plain data specifically so it can be tested against real
+      payloads instead of a mock that drifts away from the thing it stands in for.</p>
+    <p class="muted">Ten unit tests on the builder, three on the store, and seven end-to-end checks
+      driving the <em>built</em> extension in Chromium — including one that writes a newer item into
+      the cache mid-visit and proves it is still unread on the next open.</p>
+  </div>
+
+  <div class="card">
+    <h2>Deliberately not in this phase</h2>
+    <ul>
+      <li><strong>Any HQ change.</strong> The endpoint already returns what is needed.</li>
+      <li><strong>Per-item dismissal.</strong> Read state is one timestamp per source; per-item state is a different data model.</li>
+      <li><strong>Read state that syncs between browsers.</strong> Still per-browser, unchanged.</li>
+      <li><strong>New sources.</strong> Announcements, sims and news only.</li>
+    </ul>
+    <p class="muted" style="margin-bottom:0">Known ceiling, worth stating rather than discovering:
+      the endpoint returns at most 20 items per source, so a very busy week caps both the count and
+      the list. That was already true of the badge.</p>
+  </div>
+
+</main>
+</body>
+</html>
