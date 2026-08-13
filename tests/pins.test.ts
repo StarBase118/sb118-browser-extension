@@ -89,6 +89,11 @@ describe('normalizePinUrl', () => {
   it('trims surrounding whitespace', () => {
     expect(normalizePinUrl('  example.test  ')).toBe('https://example.test/')
   })
+  // The host here ends in a colon-and-digits, which a looser scheme test reads
+  // as a scheme and rejects.
+  it('accepts a bare host with a port', () => {
+    expect(normalizePinUrl('example.test:8080/x')).toBe('https://example.test:8080/x')
+  })
   // A pin chip is opened with browser.tabs.create(), so anything that isn't
   // http(s) must be rejected before it can be stored, not after.
   it('rejects a scheme the popup must never open', () => {
