@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill'
 import { MEMBER_LINKS, STAFF_LINKS } from '@/lib/launcher'
-import { getPins, addPin, removePin, renamePin } from '@/lib/pins'
+import { getPins, addPin, removePin, renamePin, normalizePinUrl } from '@/lib/pins'
 import { buildPinChip } from '@/lib/pin-chip'
 import { getProfile } from '@/lib/session'
 import { getPrefs, setPrefs } from '@/lib/prefs'
@@ -72,7 +72,71 @@ async function renderPins() {
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
     if (tab?.url) { await addPin({ label: tab.title ?? tab.url, url: tab.url }); renderPins() }
   })
-  box.appendChild(add)
+
+  const manual = document.createElement('button')
+  manual.className = 'chip add'
+  manual.textContent = '＋ Add link'
+  manual.title = 'Pin a page you are not currently on'
+  manual.addEventListener('click', () => { openManualPinForm(box, manual) })
+
+  box.append(add, manual)
+}
+
+/**
+ * The "＋ Add link" form: a name and an address, added in place of the button.
+ *
+ * "Pin tab" only reaches the page you happen to be on, which is no help for
+ * the pages a member wants at hand *while* they are somewhere else — PNPC wiki
+ * pages were the staff-test example. This is the same storage as a pinned tab,
+ * so it renames and unpins identically; the only new thing is that the address
+ * is typed rather than read off the tab, which is why it goes through
+ * normalizePinUrl() before it is stored.
+ */
+function openManualPinForm(box: HTMLElement, trigger: HTMLElement): void {
+  if (box.querySelector('.pin-form')) return
+
+  const form = document.createElement('form')
+  form.className = 'pin-form'
+
+  const name = document.createElement('input')
+  name.type = 'text'
+  name.placeholder = 'Name'
+  name.setAttribute('aria-label', 'Link name')
+
+  const url = document.createElement('input')
+  url.type = 'text'
+  url.placeholder = 'wiki.starbase118.net/…'
+  url.setAttribute('aria-label', 'Link address')
+
+  const save = document.createElement('button')
+  save.type = 'submit'
+  save.className = 'chip add'
+  save.textContent = 'Add'
+
+  form.append(name, url, save)
+
+  const cancel = () => { form.replaceWith(trigger) }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const normalized = normalizePinUrl(url.value)
+    if (!normalized) {
+      // Keep what they typed — retyping the whole address to fix a typo is
+      // worse than an invalid field that says so.
+      url.classList.add('invalid')
+      url.focus()
+      return
+    }
+    await addPin({ label: name.value.trim() || normalized, url: normalized })
+    renderPins()
+  })
+  url.addEventListener('input', () => { url.classList.remove('invalid') })
+  form.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); cancel() }
+  })
+
+  trigger.replaceWith(form)
+  name.focus()
 }
 
 /* ---------------------------------------------------------------- search */

@@ -47,6 +47,32 @@ manifest's version doesn't match `package.json`**, which is the one thing that i
 easy to half-do: a version lives in three files (`package.json`,
 `src/manifest.chromium.json`, `src/manifest.firefox.json`) and all three must move.
 
+### v0.2.2 — staff-test feedback round 2 (topic 4180 #4–#7) — 2026-08-13
+
+Same distribution as before: a prerelease GitHub Release, two zips from `npm run package`.
+Also carries the previously-unreleased PR #6 simplify sweep.
+
+- **The toolbar icon was a plain blue square.** Not a rendering problem — `src/icons/icon*.png`
+  were literal solid `#1D72A6` fills, never replaced with real art. Now the SB118 delta in
+  white on a brand-navy rounded plate, so it reads on both light and dark toolbars.
+  **`scripts/make-icons.py` regenerates all three sizes** from
+  `sb118/branding/logos/SB118_logo_favicon512x512_white.png` (outside this repo, which is why
+  the PNGs are committed rather than built). **16px gets its own mark scale (0.94) and a
+  tighter corner radius** — the gap between the two chevrons is about one pixel there, so the
+  margin that looks right at 128px is exactly what turns the mark to mush at 16.
+- **"＋ Add link" — pin a page you are not currently on.** "Pin tab" can only reach the tab
+  you're on, which is no use for the pages a member wants *while* they're elsewhere (the
+  staff-test example was PNPC wiki pages). Reuses the pin storage, so a manually added link
+  renames and unpins like any other chip; the only new thing is the typed address, which goes
+  through **`normalizePinUrl()`** — a bare host is assumed https rather than rejected, and
+  **anything that isn't http(s) is refused before it can be stored**, because a chip is opened
+  with `browser.tabs.create()` and `javascript:`/`data:` must never reach that call.
+  Verified end-to-end against the built extension in Chromium, not just unit-tested.
+
+**Deliberately not in this release: Phase 3.1** (list the notifications rather than only
+counting them), which is what Lhandon's mockup in #7 is asking for. It needs its own spec and
+would have held up two small visible fixes.
+
 ### Staff-test feedback round 1 (Jalana, topic 4180 #2) — fixed
 
 Two reports, one of which was an HQ bug rather than an extension bug:
@@ -73,8 +99,10 @@ Two reports, one of which was an HQ bug rather than an extension bug:
    Firefox, so this needs a human with a real Firefox install. If grey: build the
    content-script relay fallback specified in the Phase 1 plan, Slice 5.
 2. Eyeball the "My character" wiki link while signed in (deployed, never visually confirmed).
-3. Phase 3.1 (list the notifications, not just count them) — not started.
-4. **PR #6 is merged (`fad8808`) but deliberately NOT released** — the `/simplify` sweep of
+3. Phase 3.1 (list the notifications, not just count them) — not started, and now the
+   most-requested thing (Lhandon, topic 4180 #7). **This is the next real piece of work.**
+4. ~~**PR #6 is merged (`fad8808`) but deliberately NOT released**~~ — released as part of
+   **v0.2.2** (2026-08-13). Original reasoning kept below for the record: the `/simplify` sweep of
    the round-1 fix (announcements with no URL no longer render `<a href="#">`, label dedupe,
    combined CSS, shared `scripts/targets.mjs`). No v0.2.2 was cut because **HQ's `/api/me`
    returns `announcements: []` unconditionally** (`route.ts:72`), so the announcement fix sits
