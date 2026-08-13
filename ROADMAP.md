@@ -2,10 +2,20 @@
 
 _Last updated: 2026-08-13._
 
-## ⏭ Pick up here (staff test round, feedback round 2 → v0.2.2)
+## ⏭ Pick up here (v0.3.0 — Phase 3.1 shipped)
 
-Round 2 of staff feedback (topic 4180, posts #4–#7) produced three real items. Two are in
-**v0.2.2**; the third is the next real piece of work:
+**Phase 3.1 is done.** The popup lists the notification items rather than only counting
+them, which was the last outstanding ask from staff-test feedback round 2. Everything from
+that round is now shipped.
+
+Open, and not blocking anything:
+
+- [ ] **Firefox two-browser smoke test** — still needs a human with a real Firefox install
+      (see "Remaining Phase 1 verification" below). Predates this work, unchanged by it.
+- [ ] Eyeball the "My character" wiki link while signed in (deployed, never visually
+      confirmed).
+
+### What round 2 produced (topic 4180, posts #4–#7)
 
 - [x] **Toolbar icon was a plain blue square** (Karrod #4, Isara #5). The icons were literal
       solid-`#1D72A6` placeholders. Now the SB118 delta on a brand-navy rounded plate,
@@ -13,9 +23,10 @@ Round 2 of staff feedback (topic 4180, posts #4–#7) produced three real items.
 - [x] **Add a link that isn't the current tab** (Lhandon #7 — PNPC wiki pages). "＋ Add link"
       beside "＋ Pin tab": type a name and an address. Same storage as a pinned tab, so it
       renames and unpins identically.
-- [ ] **Phase 3.1 — list the notifications, don't just count them** (Lhandon #7, with a
-      mockup asking which thing the number is about). Deliberately kept out of v0.2.2 so the
-      two small fixes could ship; needs its own spec. **This is the next thing to build.**
+- [x] **Phase 3.1 — list the notifications, don't just count them** (Lhandon #7, with a
+      mockup asking which thing the number is about). Shipped in **v0.3.0**. Spec:
+      `docs/superpowers/specs/2026-08-13-sb118-extension-phase31-notification-list-design.md`,
+      plan: `docs/superpowers/plans/2026-08-13-phase31-notification-list.md`.
 
 Not a bug: Isara couldn't find the rename ✎ (post #5). Jalana answered it in #6 — it only
 appears once something is pinned, and she was likely still on v0.2.0. Worth one clarifying
@@ -40,10 +51,9 @@ Open before/during the test round:
 - [ ] Confirm the "My character" chip links to the real wiki page in-browser.
 - [ ] Collect staff feedback via GitHub issues (templates already exist from Phase 2).
 
-**Known gap testers will hit:** the badge counts what is new, and opening the popup clears
-it, but **the popup does not yet list the notification items themselves**. That was a
-deliberate scope line — no UI was invented past the spec — so it belongs in the test
-instructions as a known gap, not a bug report. Building that list is the obvious Phase 3.1.
+**That round's known gap — the popup counting but not listing — was closed in v0.3.0.**
+Left here for the reasoning trail: it was a deliberate scope line at the time, documented
+everywhere testers would look rather than discovered by them.
 
 ### What Phase 3 shipped
 
