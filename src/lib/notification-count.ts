@@ -2,6 +2,7 @@ import {
   BADGE_CAP,
   type LastSeen,
   type NotificationGroup,
+  type NotificationItem,
   type NotificationSource,
   type NotificationsResponse,
 } from '@/lib/notifications-types'
@@ -11,28 +12,24 @@ function parseIso(iso: string): number | null {
   return Number.isNaN(ms) ? null : ms
 }
 
+export function isItemNew(item: NotificationItem, lastSeenIso: string | undefined): boolean {
+  // A missing marker means this browser has never cleared the source, and an
+  // unparseable one is corrupt rather than a real "seen" point. Both count as
+  // new, so a bad marker cannot silently pin a source at zero while looking calm.
+  if (!lastSeenIso) return true
+  const lastSeenMs = parseIso(lastSeenIso)
+  if (lastSeenMs === null) return true
+
+  const itemMs = parseIso(item.at)
+  return itemMs !== null && itemMs > lastSeenMs
+}
+
 export function countNewForSource(
   group: NotificationGroup | undefined,
   lastSeenIso: string | undefined
 ): number {
   if (!group || group.unavailable || !group.items.length) return 0
-
-  // A missing marker means this browser has never cleared the source. Count
-  // what HQ returned so a fresh install shows recent activity instead of a
-  // misleading zero.
-  if (!lastSeenIso) return group.items.length
-
-  // A stored marker that will not parse is corrupt, not a real "seen" point.
-  // Returning 0 here would silently pin the source at zero until something
-  // else happened to rewrite the marker — the badge would look calm while
-  // activity piled up. Fall back to the same handling as a missing marker.
-  const lastSeenMs = parseIso(lastSeenIso)
-  if (lastSeenMs === null) return group.items.length
-
-  return group.items.filter((item) => {
-    const itemMs = parseIso(item.at)
-    return itemMs !== null && itemMs > lastSeenMs
-  }).length
+  return group.items.filter((item) => isItemNew(item, lastSeenIso)).length
 }
 
 export function countNew(
