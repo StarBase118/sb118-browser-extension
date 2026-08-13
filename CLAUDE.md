@@ -103,6 +103,20 @@ matters most writes a newer item into the cache while the popup is open and asse
 still unread on the next open — that is the race the popup-owns-the-marker design exists to
 close, and a unit test cannot prove it.
 
+## Housekeeping backlog
+
+- **`advanceLastSeen` re-scans the payload that `buildNotificationList` already walked** —
+  same divergence risk `isItemNew` was extracted to close, found in the 2026-08-13
+  `/simplify` pass (PR #11) and deliberately left alone rather than fixed as a drive-by.
+  The reason it's not a trivial dedupe: the two functions don't currently agree on what
+  "seen" means for an item the 8-item display cap drops — today those items get marked
+  read without ever being shown, and folding `advanceLastSeen` into the list builder would
+  either keep or change that, which is a design call, not a refactor. Needs a decision
+  before it gets touched.
+- **The ~110-line notification block inside `popup.ts` (556 lines total) is a real seam**
+  worth its own module — also flagged by the same `/simplify` pass and left alone because
+  it's a genuine extraction, not a drive-by cleanup.
+
 ### v0.2.2 — staff-test feedback round 2 (topic 4180 #4–#7) — 2026-08-13
 
 Same distribution as before: a prerelease GitHub Release, two zips from `npm run package`.
@@ -155,8 +169,8 @@ Two reports, one of which was an HQ bug rather than an extension bug:
    Firefox, so this needs a human with a real Firefox install. If grey: build the
    content-script relay fallback specified in the Phase 1 plan, Slice 5.
 2. Eyeball the "My character" wiki link while signed in (deployed, never visually confirmed).
-3. Phase 3.1 (list the notifications, not just count them) — not started, and now the
-   most-requested thing (Lhandon, topic 4180 #7). **This is the next real piece of work.**
+3. ~~Phase 3.1 (list the notifications, not just count them)~~ — **shipped as v0.3.0
+   (2026-08-13)**, see above.
 4. ~~**PR #6 is merged (`fad8808`) but deliberately NOT released**~~ — released as part of
    **v0.2.2** (2026-08-13). Original reasoning kept below for the record: the `/simplify` sweep of
    the round-1 fix (announcements with no URL no longer render `<a href="#">`, label dedupe,
