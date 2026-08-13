@@ -3,10 +3,10 @@
  * not durable. Every badge marker and cached count is read from storage.local.
  */
 import browser, { type Runtime } from 'webextension-polyfill'
-import { badgeText, advanceLastSeen, countNew } from '@/lib/notification-count'
+import { badgeText, countNew } from '@/lib/notification-count'
 import { fetchNotifications } from '@/lib/notifications-client'
 import { POLL_PERIOD_MINUTES } from '@/lib/notifications-types'
-import { getLastSeen, setLastSeen, setCachedCount } from '@/lib/notifications-store'
+import { getLastSeen, setCachedCount, setCachedItems } from '@/lib/notifications-store'
 import { enabledSources, getPrefs } from '@/lib/prefs'
 
 const ALARM_NAME = 'notif-poll'
@@ -25,24 +25,15 @@ export async function refreshBadge(): Promise<void> {
   const enabled = enabledSources(await getPrefs())
   const res = await fetchNotifications(enabled)
 
-  // `null` means the worker could not look at all. Leave the existing badge
-  // alone so a temporary HQ/network failure does not falsely clear activity.
+  // `null` means the worker could not look at all. Leave the existing badge AND
+  // the existing cache alone, so a transient HQ failure neither falsely clears
+  // activity nor blanks a list the member could still usefully read.
   if (!res) return
 
+  await setCachedItems(res.sources)
   const total = countNew(res.sources, await getLastSeen(), enabled)
   await setCachedCount(total)
   await setBadge(total)
-}
-
-export async function markAllSeen(): Promise<void> {
-  const enabled = enabledSources(await getPrefs())
-  const res = await fetchNotifications(enabled)
-  if (!res) return
-
-  const next = advanceLastSeen(await getLastSeen(), res.sources, enabled)
-  await setLastSeen(next)
-  await setCachedCount(0)
-  await setBadge(0)
 }
 
 browser.runtime.onInstalled.addListener(() => {
@@ -61,7 +52,6 @@ browser.alarms.onAlarm.addListener((alarm) => {
 
 browser.runtime.onMessage.addListener((message: unknown, _sender: Runtime.MessageSender) => {
   if (typeof message !== 'object' || message === null || !('type' in message)) return undefined
-  if (message.type === 'notif:seen') return markAllSeen()
   if (message.type === 'notif:refresh') return refreshBadge()
   return undefined
 })

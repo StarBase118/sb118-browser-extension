@@ -6,7 +6,6 @@ export interface Prefs {
   manualShipUrl?: string
   manualCharacterUrl?: string
   notifications?: Partial<Record<NotificationSource, boolean>>
-  notifIntroDismissed?: boolean
 }
 
 const KEY = 'prefs'

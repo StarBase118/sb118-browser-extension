@@ -45,9 +45,10 @@ Chrome, then the pin next to StarBase 118.
 
 ## What to look at
 
-1. **The badge number.** Within 15 minutes it should show a count of new announcements, new
-   sims on your ship, and new Community News. Does the number look plausible? Opening the
-   popup clears it.
+1. **The "New for you" list.** This is new. The popup now shows the actual items behind the
+   badge number, under the launcher buttons. The ones with a gold dot are new to you; they
+   stay dotted for the visit that revealed them and are clear next time. Click any of them
+   to open it. Does the list match what the number said?
 2. **The sim count specifically.** It should reflect your actual ship. If you are on a ship
    and it stays at zero for a day, tell us — that is the exact bug we fixed last, and we want
    to know if it survived.
@@ -60,15 +61,12 @@ Chrome, then the pin next to StarBase 118.
 
 ## Known gaps — not bugs, please don't report these
 
-- **The popup does not list the notifications themselves.** The badge tells you how many
-  things are new; it does not yet show you what they are. Clicking through to HQ, Discord or
-  the news page is still manual. This is the next thing we build, and it is the feedback we
-  expect most, so consider it already heard.
+- **The list can be up to 15 minutes behind.** It shows what the last check found, which is
+  also what the badge number was counting — the two always agree, even when both are a
+  little stale.
 - **The badge does not sync between computers.** It is counted per browser, on purpose —
   nothing about what you have read leaves your machine.
 - **Firefox forgets the add-on on restart.** See above.
-- **"My ship" links to HQ, not a ship wiki page.** We do not have a reliable source for ship
-  wiki URLs yet.
 - **Chrome's "developer extensions" warning.** Expected until we publish.
 
 ## Telling us what you found

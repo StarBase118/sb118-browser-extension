@@ -47,6 +47,62 @@ manifest's version doesn't match `package.json`**, which is the one thing that i
 easy to half-do: a version lives in three files (`package.json`,
 `src/manifest.chromium.json`, `src/manifest.firefox.json`) and all three must move.
 
+## v0.3.0 — Phase 3.1, the popup lists what the badge counted (2026-08-13)
+
+Closes the gap Phase 3 shipped on purpose and Lhandon asked about in topic 4180 #7: the
+badge said "3" and nothing said what the 3 were. **No HQ change** —
+`GET /api/me/notifications` already returned every item with `id`/`title`/`url`/`at`; the
+worker was counting them and throwing them away.
+
+Spec: `docs/superpowers/specs/2026-08-13-sb118-extension-phase31-notification-list-design.md`
+(companion `spec-companion-phase31.html`). Plan:
+`docs/superpowers/plans/2026-08-13-phase31-notification-list.md`.
+
+**Five things worth not re-deriving:**
+
+- **The popup renders the worker's cached payload (`notifItems`) and never fetches.** One
+  fetch path, no loading state, and the list cannot disagree with the badge because it is
+  the same data that produced the count. The cost is up to 15 minutes of staleness, which
+  is exactly the staleness the badge already had.
+- **The popup is the ONLY writer of `notifLastSeen`.** `markAllSeen()` is deleted and the
+  `notif:seen` message is gone. The worker cannot do this correctly: it reads the cache
+  when the message arrives, which is *later* than the popup rendered it, and the message
+  carries nothing identifying which snapshot was on screen — a poll landing in between
+  marks an item seen that was never displayed. The popup holds that snapshot, so it
+  computes `advanceLastSeen()` from it and calls `setLastSeen()` directly, **after** the
+  rows are in the DOM. That ordering is the feature: dots stay lit for the visit that
+  revealed them.
+- **`buildNotificationList()` PARTITIONS new from old — it does not sort the merged list
+  and slice it.** Markers are per source, so "new" is not a function of absolute time
+  across the list: with the sims marker an hour old and the news marker three days old, a
+  *read* sim from five hours ago sorts above an *unread* news item from two days ago, and
+  a time-sorted slice at the cap drops the unread one. Regression test: "keeps an unread
+  item that is older than the read items filling the cap" — mutation-tested by swapping in
+  the naive slice and confirming it goes red.
+- **`getCachedItems()` returns `null` for absent, unparseable, or wrong-shape data, and a
+  payload object otherwise — including an empty one.** Null is "we have not successfully
+  looked" (→ "Checking for updates…" plus a refresh); an empty payload is "we looked and it
+  was quiet" (→ "Nothing new right now."). Telling a member nothing is new on the strength
+  of a cache we could not read would be a claim we have not earned. **Quiet and Checking
+  are told apart by the getter's return value, not by item count.**
+- **An ABSENT source is not an unavailable one.** Only an explicit `unavailable: true` flag
+  counts as evidence something failed. Conflating them made a completely empty payload
+  (`{}`) render "Couldn't reach HQ" for a perfectly healthy quiet cache — **found by the
+  end-to-end run, not the unit tests**, because the unit test for the quiet case was
+  written as `{ news: { items: [] } }`, a present-but-empty group that takes the other
+  branch. Both shapes are covered now.
+
+**Deleted, not deprecated:** the first-run explainer (`renderNotificationIntro`, the
+`#notif-intro` element, its CSS, and the `notifIntroDismissed` pref). It existed to explain
+a bare number. There is also no "Mark all read" control — opening the popup already marks
+everything read, so the button would do what just happened.
+
+**`scripts/e2e-notifications.mjs`** drives the real built extension in a headed Chromium
+persistent context (headless does not start MV3 service workers). Nine checks. The one that
+matters most writes a newer item into the cache while the popup is open and asserts it is
+still unread on the next open — that is the race the popup-owns-the-marker design exists to
+close, and a unit test cannot prove it.
+
 ### v0.2.2 — staff-test feedback round 2 (topic 4180 #4–#7) — 2026-08-13
 
 Same distribution as before: a prerelease GitHub Release, two zips from `npm run package`.
