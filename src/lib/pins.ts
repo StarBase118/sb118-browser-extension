@@ -15,6 +15,30 @@ function sanitizeLabel(label: string): string {
   return label.trim().slice(0, MAX_PIN_LABEL)
 }
 
+/**
+ * Normalise a hand-typed address, or return null if it isn't one we will open.
+ *
+ * "Pin tab" gets its url from the browser, but a member typing one will leave
+ * the scheme off, so a bare `wiki.starbase118.net/...` is assumed to be https
+ * rather than rejected. Only http and https are accepted — a chip is a link
+ * the popup opens in a tab, so `javascript:` and `data:` must never reach it,
+ * and `chrome://`/`about:` can't be opened from an extension anyway.
+ */
+export function normalizePinUrl(input: string): string | null {
+  const raw = input.trim()
+  if (!raw) return null
+  const candidate = /^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`
+  let parsed: URL
+  try {
+    parsed = new URL(candidate)
+  } catch {
+    return null
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null
+  if (!parsed.hostname) return null
+  return parsed.toString()
+}
+
 export async function getPins(): Promise<Pin[]> {
   return readStorage<Pin[]>(KEY, (v): v is Pin[] => Array.isArray(v), [])
 }

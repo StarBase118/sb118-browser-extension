@@ -10,7 +10,7 @@ vi.mock('webextension-polyfill', () => ({
   },
 }))
 
-import { getPins, addPin, removePin, renamePin, MAX_PIN_LABEL } from '@/lib/pins'
+import { getPins, addPin, removePin, renamePin, normalizePinUrl, MAX_PIN_LABEL } from '@/lib/pins'
 
 beforeEach(() => { for (const k of Object.keys(store)) delete store[k] })
 
@@ -73,5 +73,35 @@ describe('renamePin', () => {
     await addPin({ label: 'A', url: 'https://x/1' })
     const after = await renamePin('https://x/1', 'Renamed')
     expect(after[0].url).toBe('https://x/1')
+  })
+})
+
+describe('normalizePinUrl', () => {
+  it('assumes https for a bare host', () => {
+    expect(normalizePinUrl('wiki.starbase118.net/wiki/Foo')).toBe(
+      'https://wiki.starbase118.net/wiki/Foo'
+    )
+  })
+  it('keeps an explicit scheme', () => {
+    expect(normalizePinUrl('http://example.test/a')).toBe('http://example.test/a')
+    expect(normalizePinUrl('https://example.test/a')).toBe('https://example.test/a')
+  })
+  it('trims surrounding whitespace', () => {
+    expect(normalizePinUrl('  example.test  ')).toBe('https://example.test/')
+  })
+  // A pin chip is opened with browser.tabs.create(), so anything that isn't
+  // http(s) must be rejected before it can be stored, not after.
+  it('rejects a scheme the popup must never open', () => {
+    for (const bad of [
+      'javascript:alert(1)',
+      'data:text/html,x',
+      'file:///etc/passwd',
+      'chrome://settings',
+    ]) {
+      expect(normalizePinUrl(bad)).toBeNull()
+    }
+  })
+  it('rejects empty or unparseable input', () => {
+    for (const bad of ['', '   ', 'https://']) expect(normalizePinUrl(bad)).toBeNull()
   })
 })
