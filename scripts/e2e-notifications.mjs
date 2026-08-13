@@ -22,8 +22,6 @@ const check = (ok, msg) => { if (!ok) { console.error('FAIL:', msg); failed++ } 
 const iso = (h) => new Date(Date.now() - h * 3600_000).toISOString()
 const seed = async (page, state) => page.evaluate(
   (s) => new Promise((r) => chrome.storage.local.set(s, r)), state)
-const read = async (page, key) => page.evaluate(
-  (k) => new Promise((r) => chrome.storage.local.get(k, (o) => r(o[k]))), key)
 
 const open = async () => { const p = await ctx.newPage(); await p.goto(POPUP); return p }
 

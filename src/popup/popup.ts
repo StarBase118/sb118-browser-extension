@@ -428,7 +428,11 @@ async function renderNotifications(): Promise<void> {
   const box = document.getElementById('notiflist')!
   box.innerHTML = ''
 
-  const [cached, prefs] = await Promise.all([getCachedItems(), getPrefs()])
+  const [cached, prefs, lastSeen] = await Promise.all([
+    getCachedItems(),
+    getPrefs(),
+    getLastSeen(),
+  ])
   const enabled = enabledSources(prefs)
 
   if (!enabled.length) { section.hidden = true; return }
@@ -440,7 +444,6 @@ async function renderNotifications(): Promise<void> {
     return
   }
 
-  const lastSeen = await getLastSeen()
   const { items, state } = buildNotificationList(cached, lastSeen, enabled)
 
   if (state === 'disabled') { section.hidden = true; return }
