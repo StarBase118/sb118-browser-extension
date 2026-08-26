@@ -506,27 +506,6 @@ async function personalize() {
   addChip('🚀', profile.ship?.name ?? null, profile.ship?.wikiUrl ?? prefs.manualShipUrl ?? null)
   if (mine.children.length) document.getElementById('mystuff')!.hidden = false
 
-  const anns = profile.announcements ?? []
-  if (anns.length) {
-    const box = document.getElementById('annlist')!
-    for (const ann of anns as Array<{ title: string; url?: string }>) {
-      const row = document.createElement('div'); row.className = 'a-item'
-      const dot = document.createElement('span'); dot.className = 'a-dot'; dot.textContent = '◆'
-      // Same rule as the "my stuff" chips: an announcement with no URL is text,
-      // not an <a href="#"> that looks clickable and goes nowhere.
-      const url = ann.url
-      const label = document.createElement(url ? 'a' : 'span')
-      label.textContent = ann.title
-      label.style.color = 'inherit'; label.style.textDecoration = 'none'
-      if (url) {
-        ;(label as HTMLAnchorElement).href = url
-        label.addEventListener('click', (e) => { e.preventDefault(); openUrl(url) })
-      }
-      row.append(dot, label); box.appendChild(row)
-    }
-    document.getElementById('announce')!.hidden = false
-  }
-
   if (profile.isStaff) {
     renderGrid(document.getElementById('staffgrid')!, STAFF_LINKS, 'chip')
     document.getElementById('staff')!.hidden = false
