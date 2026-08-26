@@ -180,6 +180,11 @@ Two reports, one of which was an HQ bug rather than an extension bug:
    zero observable change and a re-install for every tester an hour after v0.2.1. It ships with
    the next real release, whenever Phase 3.1 or the next fix lands.
 
+   **Resolved 2026-08-26:** Phase 3.1 shipped announcements through the `#notifs` list fed by
+   `/api/me/notifications`, so the old `#announce` section was superseded rather than waiting on
+   HQ. That render block, its HTML section, its CSS, and the `announcements` field it read have
+   all been deleted here; the stub came off HQ's side in megatool PR #1187.
+
 ## ⏭ Picking this up (as of 2026-07-26)
 
 Phase 2 is **designed and approved**; one of its four tracks is **shipped**.
@@ -292,7 +297,7 @@ it just cannot say which page it is about.
 
 Two deliverables:
 1. **The extension** (this repo, `StarBase118/sb118-browser-extension`) — MV3, TypeScript + Vite, one Chromium build + one Firefox build. Auth is session-only (no passwords stored).
-2. **`GET /api/me`** — read-only endpoint in the **`sb118-megatool`** repo (`src/app/api/me/route.ts`), reads the Authentik/NextAuth session and returns the caller's ship, character (incl. `characters.wiki_url` via `resolveCharacterWikiUrl()` in `src/lib/member-context.ts`), staff flag, **`nav[]`** (added 2026-07-26 — the HQ pages that member may open, built by `src/lib/extension-nav.ts` in megatool), and placeholder notifications/announcements. Classified **member-safe** in the megatool route firewall (`src/__tests__/route-firewall.test.ts`).
+2. **`GET /api/me`** — read-only endpoint in the **`sb118-megatool`** repo (`src/app/api/me/route.ts`), reads the Authentik/NextAuth session and returns the caller's ship, character (incl. `characters.wiki_url` via `resolveCharacterWikiUrl()` in `src/lib/member-context.ts`), staff flag, **`nav[]`** (added 2026-07-26 — the HQ pages that member may open, built by `src/lib/extension-nav.ts` in megatool). It no longer carries `notifications` or `announcements` — both were permanently-empty stubs and were removed 2026-08-26 (megatool PR #1187) along with this repo's matching dead code. Live awareness data comes from `GET /api/me/notifications`, never from `/api/me`. Classified **member-safe** in the megatool route firewall (`src/__tests__/route-firewall.test.ts`).
 
 ## Build & test
 

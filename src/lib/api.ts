@@ -14,12 +14,6 @@ export interface ApiMeResponse {
   nav?: NavEntry[]
   ship: { name: string | null; wikiUrl: string | null }
   character: { name: string | null; wikiUrl: string | null }
-  notifications: {
-    sims: { count: number; latest: string | null }
-    discord: { count: number; latest: string | null }
-    forum: { count: number; latest: string | null }
-  }
-  announcements: never[]
 }
 
 export interface ApiMeUnauthenticated { authenticated: false }
