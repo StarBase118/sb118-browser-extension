@@ -8,10 +8,28 @@ import { buildFeedbackUrl } from '@/lib/feedback-link'
 import { getNav, syncNavCache } from '@/lib/nav-cache'
 import { destinationGroup } from '@/lib/destinations'
 import { runSearch, pendingSources, type SearchContext } from '@/lib/search'
-import { getCachedItems, getLastSeen, setLastSeen } from '@/lib/notifications-store'
+import {
+  getCachedCount,
+  getCachedItems,
+  getClicked,
+  getLastSeen,
+  pruneClicked,
+  setLastSeen,
+} from '@/lib/notifications-store'
 import { advanceLastSeen } from '@/lib/notification-count'
-import { buildNotificationList, type DisplayItem } from '@/lib/notification-list'
-import { SOURCE_LABELS as NOTIF_SOURCE_LABELS } from '@/lib/notifications-types'
+import {
+  buildNotificationList,
+  selectDefaultTab,
+  type DisplayItem,
+  type PopupTab,
+} from '@/lib/notification-list'
+import {
+  SOURCE_LABELS as NOTIF_SOURCE_LABELS,
+  type LastSeen,
+  type NotificationSource,
+  type NotificationsResponse,
+} from '@/lib/notifications-types'
+import { mountTabStrip, type TabStrip } from '@/popup/tab-strip'
 import {
   DEBOUNCE_MS,
   SOURCE_LABELS,
@@ -411,28 +429,26 @@ function notifNote(text: string): HTMLElement {
 }
 
 /**
- * Render the section, then advance the marker.
+ * The exact payload the panel rendered, held for showNotifs().
  *
- * The order is the feature. The new-set is computed from the marker as it
- * stands, rendered, and only then does the marker move — so the items the
- * badge was counting are still dotted when the member looks at them, and are
- * clear next time.
- *
- * The popup advances the marker itself rather than asking the worker to,
- * because only the popup knows which snapshot was on screen: a worker reading
- * the cache when a message arrives reads it later, and a poll landing in
- * between would mark an item seen that was never displayed.
+ * The marker must advance against THIS snapshot, never a fresh storage read —
+ * a worker poll landing between the render and the member clicking the tab
+ * would otherwise mark an item seen that was never on screen. Same reasoning
+ * that moved this write out of the worker in Phase 3.1.
  */
+let rendered: {
+  cached: NotificationsResponse['sources']
+  lastSeen: LastSeen
+  enabled: NotificationSource[]
+} | null = null
+
 async function renderNotifications(): Promise<void> {
-  const section = document.getElementById('notifs')!
   const box = document.getElementById('notiflist')!
   box.innerHTML = ''
 
-  const [cached, prefs] = await Promise.all([getCachedItems(), getPrefs()])
+  const [cached, prefs, clicked] = await Promise.all([getCachedItems(), getPrefs(), getClicked()])
   const enabled = enabledSources(prefs)
-
-  if (!enabled.length) { section.hidden = true; return }
-  section.hidden = false
+  if (!enabled.length) return
 
   if (cached === null) {
     box.appendChild(notifNote('Checking for updates…'))
@@ -441,25 +457,25 @@ async function renderNotifications(): Promise<void> {
   }
 
   const lastSeen = await getLastSeen()
-  const { items, state } = buildNotificationList(cached, lastSeen, enabled)
+  const { items, state } = buildNotificationList(cached, lastSeen, enabled, new Set(clicked))
 
-  if (state === 'disabled') { section.hidden = true; return }
+  if (state === 'disabled') return
   if (state === 'outage') {
     box.appendChild(notifNote('Couldn’t reach HQ — this list may be out of date.'))
     return
   }
   if (!items.length) {
     box.appendChild(notifNote('Nothing new right now.'))
-    return
+  } else {
+    for (const item of items) box.appendChild(buildNotifRow(item))
   }
 
-  for (const item of items) box.appendChild(buildNotifRow(item))
+  // Only what was actually rendered, and only now.
+  rendered = { cached, lastSeen, enabled }
 
-  // Only now, and only from the payload just rendered.
-  await setLastSeen(advanceLastSeen(lastSeen, cached, enabled))
-  void browser.runtime.sendMessage({ type: 'notif:refresh' }).catch(() => {
-    // The worker may be asleep; the next alarm reconciles the badge.
-  })
+  // Keys whose item has aged out of a HEALTHY source can go; a sick source
+  // keeps everything it has.
+  void pruneClicked(cached).catch(() => {})
 }
 
 /* ----------------------------------------------------------- launcher UI */
