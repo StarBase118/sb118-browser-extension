@@ -51,6 +51,11 @@ function seedPayload() {
   }
 }
 
+/** Let the render + mount promise chains settle. */
+async function flush(hops = 30) {
+  for (let i = 0; i < hops; i++) await Promise.resolve()
+}
+
 /**
  * Load popup.ts fresh against the real markup and run its entry point once.
  *
@@ -81,9 +86,9 @@ async function bootPopup() {
   ;(entry as () => void)()
 
   // Let the render + mount promise chain settle.
-  for (let i = 0; i < 30; i++) await Promise.resolve()
+  await flush()
   await new Promise((r) => setTimeout(r, 0))
-  for (let i = 0; i < 30; i++) await Promise.resolve()
+  await flush()
 }
 
 beforeEach(() => {
@@ -155,7 +160,7 @@ describe('popup tabs', () => {
     expect(setLastSeenCalls).toEqual([])
 
     document.getElementById('tab-notifs-btn')!.click()
-    for (let i = 0; i < 30; i++) await Promise.resolve()
+    await flush()
 
     expect(setLastSeenCalls.length).toBe(1)
   })
@@ -193,7 +198,7 @@ describe('clicking a notification row', () => {
 
     const row = document.querySelector<HTMLAnchorElement>('#notiflist .n-row')!
     row.click()
-    for (let i = 0; i < 30; i++) await Promise.resolve()
+    await flush()
 
     expect(created).toEqual(['https://sb118.test/sim/1'])
     expect(store.notifClicked).toEqual(['sims:1'])
@@ -205,7 +210,7 @@ describe('clicking a notification row', () => {
     store.notifCount = 1
     await bootPopup()
     document.querySelector<HTMLAnchorElement>('#notiflist .n-row')!.click()
-    for (let i = 0; i < 30; i++) await Promise.resolve()
+    await flush()
 
     await bootPopup()
     expect(document.querySelectorAll('#notiflist .n-row').length).toBe(0)

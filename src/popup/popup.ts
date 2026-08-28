@@ -448,6 +448,16 @@ function notifNote(text: string): HTMLElement {
  * would otherwise mark an item seen that was never on screen. Same reasoning
  * that moved this write out of the worker in Phase 3.1.
  */
+/**
+ * The enabled source list, cached for mountTabs().
+ *
+ * Set on EVERY path through renderNotifications() that gets far enough to know
+ * it, including the ones that return early — unlike `rendered`, which is only
+ * the successful-render snapshot. mountTabs() needs the list even when the
+ * cache was unreadable, because a tab strip still has to appear in that state.
+ */
+let enabledCache: NotificationSource[] | null = null
+
 let rendered: {
   cached: NotificationsResponse['sources']
   lastSeen: LastSeen
@@ -460,6 +470,7 @@ async function renderNotifications(): Promise<void> {
 
   const [cached, prefs, clicked] = await Promise.all([getCachedItems(), getPrefs(), getClicked()])
   const enabled = enabledSources(prefs)
+  enabledCache = enabled
   if (!enabled.length) return
 
   if (cached === null) {
@@ -471,7 +482,8 @@ async function renderNotifications(): Promise<void> {
   const lastSeen = await getLastSeen()
   const { items, state } = buildNotificationList(cached, lastSeen, enabled, new Set(clicked))
 
-  if (state === 'disabled') return
+  // No 'disabled' branch here: the `!enabled.length` guard above already
+  // returned, and that is the only condition that produces it.
   if (state === 'outage') {
     box.appendChild(notifNote('Couldn’t reach HQ — this list may be out of date.'))
     return
@@ -576,8 +588,12 @@ async function markNotifsSeen(): Promise<void> {
 }
 
 async function mountTabs(): Promise<void> {
-  const [prefs, count] = await Promise.all([getPrefs(), getCachedCount()])
-  const enabled = enabledSources(prefs)
+  // renderNotifications() has already read prefs by the time this runs, so
+  // reuse its result rather than paying a second storage round trip on every
+  // popup open. The fallback covers the case where it threw before getting
+  // that far.
+  const count = await getCachedCount()
+  const enabled = enabledCache ?? enabledSources(await getPrefs())
 
   // Every source switched off: no strip at all, the launcher is the popup.
   if (!enabled.length) {

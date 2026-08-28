@@ -97,6 +97,16 @@ export function clickedKey(source: NotificationSource, id: string): string {
   return `${source}:${id}`
 }
 
+/**
+ * The inverse of clickedKey(). Paired with it deliberately: the format was
+ * previously built here and taken apart by hand in pruneClicked(), which is
+ * the same contract written twice.
+ */
+export function clickedKeySource(key: string): string {
+  const colon = key.indexOf(':')
+  return colon === -1 ? '' : key.slice(0, colon)
+}
+
 function isClickedList(v: unknown): v is string[] {
   return Array.isArray(v) && v.every((k) => typeof k === 'string')
 }
@@ -134,10 +144,9 @@ export async function pruneClicked(sources: NotificationsResponse['sources']): P
 
   // A key under a sick or missing source is not evidence of anything, so it
   // survives untouched.
-  const next = current.filter((key) => {
-    const source = key.slice(0, key.indexOf(':'))
-    return !healthy.has(source) || live.has(key)
-  })
+  const next = current.filter(
+    (key) => !healthy.has(clickedKeySource(key)) || live.has(key)
+  )
 
   if (next.length === current.length) return
   await browser.storage.local.set({ [CLICKED_KEY]: next })
