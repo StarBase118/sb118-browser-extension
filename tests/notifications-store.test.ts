@@ -16,6 +16,7 @@ import {
   getCachedItems,
   getClicked,
   getLastSeen,
+  pruneClicked,
   setCachedCount,
   setCachedItems,
   setLastSeen,
@@ -119,5 +120,48 @@ describe('clicked keys', () => {
     expect(await getClicked()).toEqual([])
     store.notifClicked = ['sims:42', 7]
     expect(await getClicked()).toEqual([])
+  })
+})
+
+describe('pruning clicked keys', () => {
+  const healthy = {
+    announcements: { items: [{ id: '1', title: 'a', url: 'u', at: '2026-08-20T00:00:00.000Z' }] },
+    sims: { items: [{ id: '9', title: 's', url: 'u', at: '2026-08-20T00:00:00.000Z' }] },
+  }
+
+  it('drops a key whose item is gone and keeps one that is still there', async () => {
+    store.notifClicked = ['announcements:1', 'announcements:99']
+    await pruneClicked(healthy)
+    expect(await getClicked()).toEqual(['announcements:1'])
+  })
+
+  // THE outage case. A source that failed says nothing about what the member
+  // dismissed; deleting its keys makes every dismissed row reappear when it
+  // recovers.
+  it('keeps every key of a source flagged unavailable', async () => {
+    store.notifClicked = ['announcements:1', 'announcements:99', 'sims:404']
+    await pruneClicked({
+      announcements: { items: [], unavailable: true },
+      sims: { items: [{ id: '9', title: 's', url: 'u', at: '2026-08-20T00:00:00.000Z' }] },
+    })
+    expect((await getClicked()).sort()).toEqual(['announcements:1', 'announcements:99'])
+  })
+
+  it('keeps every key of a source missing from the payload', async () => {
+    store.notifClicked = ['news:5', 'sims:9']
+    await pruneClicked(healthy)
+    expect((await getClicked()).sort()).toEqual(['news:5', 'sims:9'])
+  })
+
+  it('drops keys of a healthy source that is simply empty', async () => {
+    store.notifClicked = ['sims:9']
+    await pruneClicked({ sims: { items: [] } })
+    expect(await getClicked()).toEqual([])
+  })
+
+  it('leaves storage alone when nothing needs dropping', async () => {
+    store.notifClicked = ['announcements:1']
+    await pruneClicked(healthy)
+    expect(await getClicked()).toEqual(['announcements:1'])
   })
 })

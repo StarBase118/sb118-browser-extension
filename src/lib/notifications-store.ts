@@ -110,3 +110,35 @@ export async function addClicked(key: string): Promise<void> {
   if (current.includes(key)) return
   await browser.storage.local.set({ [CLICKED_KEY]: [...current, key] })
 }
+
+/**
+ * Drop stored keys whose item is no longer in the payload.
+ *
+ * ONLY keys belonging to a healthy source are eligible. A source that is
+ * absent from the payload, or flagged `unavailable`, keeps every key it has —
+ * otherwise one Discord outage un-dismisses every announcement the member has
+ * already read, and they all reappear when the source recovers.
+ */
+export async function pruneClicked(sources: NotificationsResponse['sources']): Promise<void> {
+  const current = await getClicked()
+  if (!current.length) return
+
+  const healthy = new Set<string>()
+  const live = new Set<string>()
+  for (const source of ALL_SOURCES) {
+    const group = sources[source]
+    if (!group || group.unavailable) continue
+    healthy.add(source)
+    for (const item of group.items) live.add(clickedKey(source, item.id))
+  }
+
+  // A key under a sick or missing source is not evidence of anything, so it
+  // survives untouched.
+  const next = current.filter((key) => {
+    const source = key.slice(0, key.indexOf(':'))
+    return !healthy.has(source) || live.has(key)
+  })
+
+  if (next.length === current.length) return
+  await browser.storage.local.set({ [CLICKED_KEY]: next })
+}
