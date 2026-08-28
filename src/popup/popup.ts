@@ -31,7 +31,7 @@ import {
   type NotificationSource,
   type NotificationsResponse,
 } from '@/lib/notifications-types'
-import { mountTabStrip, type TabStrip } from '@/popup/tab-strip'
+import { mountTabStrip } from '@/popup/tab-strip'
 import {
   DEBOUNCE_MS,
   SOURCE_LABELS,
@@ -555,8 +555,6 @@ function wireReportIssue() {
   })
 }
 
-let tabs: TabStrip | null = null
-
 /**
  * Advance the marker because the panel is now on screen.
  *
@@ -595,7 +593,7 @@ async function mountTabs(): Promise<void> {
   pill.textContent = text
   pill.hidden = !text
 
-  tabs = mountTabStrip(
+  const tabs = mountTabStrip(
     {
       strip,
       launcherBtn: document.getElementById('tab-launcher-btn') as HTMLButtonElement,
@@ -616,5 +614,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // The strip mounts only after renderNotifications() has filled the panel and
   // set `rendered` — showing the tab is what advances the marker, so there must
   // be a snapshot to advance against.
-  void Promise.all([renderPins(), personalize(), renderNotifications()]).then(mountTabs)
+  //
+  // allSettled, not all: these three already failed independently of each other,
+  // and `all` would let a rejection in renderPins() — nothing to do with
+  // notifications — skip mountTabs entirely, leaving both #tabs and #tab-notifs
+  // hidden. That degrades the popup to launcher-only with no way to reach the
+  // notifications and nothing on screen to say why.
+  void Promise.allSettled([renderPins(), personalize(), renderNotifications()]).then(mountTabs)
 })
