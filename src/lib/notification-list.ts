@@ -53,6 +53,7 @@ export function buildNotificationList(
   sources: NotificationsResponse['sources'],
   lastSeen: LastSeen,
   enabled: NotificationSource[],
+  clicked: ReadonlySet<string> = new Set(),
   cap: number = LIST_CAP
 ): NotificationListResult {
   // Checked before anything else: an emptiness test written first would report
@@ -78,6 +79,10 @@ export function buildNotificationList(
     sawAvailable = true
 
     for (const item of group.items) {
+      // Filtered BEFORE the partition, not after: dropping a seen item here
+      // frees a slot that seen.slice() then fills from the next item down.
+      // Filtering the finished list instead would leave a hole.
+      if (clicked.has(`${source}:${item.id}`)) continue
       const display: DisplayItem = { ...item, source, isNew: isItemNew(item, lastSeen[source]) }
       ;(display.isNew ? fresh : seen).push(display)
     }
