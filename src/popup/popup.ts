@@ -16,7 +16,7 @@ import {
   pruneClicked,
   setLastSeen,
 } from '@/lib/notifications-store'
-import { advanceLastSeen } from '@/lib/notification-count'
+import { advanceLastSeen, badgeText } from '@/lib/notification-count'
 import {
   buildNotificationList,
   selectDefaultTab,
@@ -543,9 +543,66 @@ function wireReportIssue() {
   })
 }
 
+let tabs: TabStrip | null = null
+
+/**
+ * Advance the marker because the panel is now on screen.
+ *
+ * "Seen" means visible, not rendered — the panel renders on every open,
+ * including opens that land on Launcher, and clearing the badge for someone
+ * who never looked loses information silently.
+ *
+ * The write is AWAITED before notif:refresh: the worker recomputes the badge
+ * from stored state, so a refresh racing ahead of the write counts against the
+ * old marker and puts the number straight back.
+ */
+async function markNotifsSeen(): Promise<void> {
+  if (!rendered) return
+  const { cached, lastSeen, enabled } = rendered
+  await setLastSeen(advanceLastSeen(lastSeen, cached, enabled))
+  void browser.runtime.sendMessage({ type: 'notif:refresh' }).catch(() => {
+    // The worker may be asleep; the next alarm reconciles the badge.
+  })
+}
+
+async function mountTabs(): Promise<void> {
+  const [prefs, count] = await Promise.all([getPrefs(), getCachedCount()])
+  const enabled = enabledSources(prefs)
+
+  // Every source switched off: no strip at all, the launcher is the popup.
+  if (!enabled.length) {
+    document.getElementById('tab-notifs')!.hidden = true
+    return
+  }
+
+  const strip = document.getElementById('tabs')!
+  strip.hidden = false
+
+  const pill = document.getElementById('tab-count')!
+  const text = badgeText(count)
+  pill.textContent = text
+  pill.hidden = !text
+
+  tabs = mountTabStrip(
+    {
+      strip,
+      launcherBtn: document.getElementById('tab-launcher-btn') as HTMLButtonElement,
+      notifsBtn: document.getElementById('tab-notifs-btn') as HTMLButtonElement,
+      launcherPanel: document.getElementById('tab-launcher')!,
+      notifsPanel: document.getElementById('tab-notifs')!,
+    },
+    { onShow: (tab: PopupTab) => { if (tab === 'notifs') void markNotifsSeen() } }
+  )
+
+  tabs.show(selectDefaultTab(count, enabled.length))
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   renderGrid(document.getElementById('grid')!, MEMBER_LINKS)
   wireReportIssue()
   wireSearch()
-  Promise.all([renderPins(), personalize(), renderNotifications()])
+  // The strip mounts only after renderNotifications() has filled the panel and
+  // set `rendered` — showing the tab is what advances the marker, so there must
+  // be a snapshot to advance against.
+  void Promise.all([renderPins(), personalize(), renderNotifications()]).then(mountTabs)
 })
