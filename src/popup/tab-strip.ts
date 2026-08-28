@@ -36,15 +36,12 @@ export function mountTabStrip(el: TabStripElements, opts: TabStripOptions = {}):
     el.notifsPanel.hidden = !onNotifs
     el.launcherPanel.hidden = onNotifs
 
-    for (const [btn, active] of [
-      [el.launcherBtn, !onNotifs],
-      [el.notifsBtn, onNotifs],
-    ] as const) {
-      btn.setAttribute('aria-selected', String(active))
-      // Roving tabindex: one Tab press moves into the panel rather than
-      // walking across the other tab button.
-      btn.tabIndex = active ? 0 : -1
-    }
+    // Roving tabindex: one Tab press moves into the panel rather than walking
+    // across the other tab button.
+    el.launcherBtn.setAttribute('aria-selected', String(!onNotifs))
+    el.launcherBtn.tabIndex = onNotifs ? -1 : 0
+    el.notifsBtn.setAttribute('aria-selected', String(onNotifs))
+    el.notifsBtn.tabIndex = onNotifs ? 0 : -1
 
     opts.onShow?.(tab)
   }
