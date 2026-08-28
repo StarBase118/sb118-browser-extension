@@ -8,7 +8,7 @@ Tiered: every member gets a core set of features; staff get extra admin tools th
 
 ## Status
 
-**v0.3.0 — Phases 1, 2, 3 and 3.1 are all shipped and deployed.** See [`ROADMAP.md`](ROADMAP.md).
+**v0.4.0 — Phases 1, 2, 3, 3.1 and 3.2 are all shipped and deployed.** See [`ROADMAP.md`](ROADMAP.md).
 
 | Phase | What | State |
 |-------|------|-------|

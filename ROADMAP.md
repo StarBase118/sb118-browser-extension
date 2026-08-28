@@ -1,12 +1,27 @@
 # SB118 Browser Extension — roadmap & pick-up-here
 
-_Last updated: 2026-08-13._
+_Last updated: 2026-08-28._
 
-## ⏭ Pick up here (v0.3.0 — Phase 3.1 shipped)
+## ⏭ Pick up here (v0.4.0 — Phase 3.2 shipped)
 
-**Phase 3.1 is done.** The popup lists the notification items rather than only counting
-them, which was the last outstanding ask from staff-test feedback round 2. Everything from
-that round is now shipped.
+**Phase 3.2 is done.** The popup is two tabs — Launcher and New for you — and a notification
+item you have clicked stops being listed. That closes staff-test feedback round 3 (topic
+4180, posts #11 and #13); everything from rounds 1 through 3 is now shipped.
+
+**One visible behaviour change worth remembering:** the toolbar badge now clears only when
+you actually look at the New for you panel, not on any popup open.
+
+### What round 3 produced (topic 4180, posts #11–#14)
+
+- [x] **"New for you" pushed Pinned off the bottom** (Jalana #11, with a screen recording).
+      Two tabs now; the launcher is whole and unpushed and the list is whole and uncapped.
+- [x] **A clicked item was still listed next time** (Isara #13). Clicked keys are stored and
+      filtered out for good.
+- [ ] Nothing outstanding from Karrod #12 or Lhandon #14 — both confirmed v0.3.0 worked, no
+      request attached. Lhandon is on Vivaldi, no issues.
+
+Spec: `docs/superpowers/specs/2026-08-28-sb118-extension-phase32-tabs-and-clicked-items-design.md`,
+plan: `docs/superpowers/plans/2026-08-28-extension-phase32-tabs-and-clicked-items.md`.
 
 Open, and not blocking anything:
 

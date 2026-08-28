@@ -103,8 +103,116 @@ matters most writes a newer item into the cache while the popup is open and asse
 still unread on the next open — that is the race the popup-owns-the-marker design exists to
 close, and a unit test cannot prove it.
 
+## v0.4.0 — Phase 3.2, a tab for the notifications and clicked items that stay gone (2026-08-28)
+
+Both changes come from staff-test feedback round 3 on topic 4180, a day after v0.3.0.
+**No HQ change** — `GET /api/me/notifications` is untouched again.
+
+Spec: `docs/superpowers/specs/2026-08-28-sb118-extension-phase32-tabs-and-clicked-items-design.md`
+(companion `spec-companion-phase32.html`). Plan:
+`docs/superpowers/plans/2026-08-28-extension-phase32-tabs-and-clicked-items.md`.
+
+**Jalana (#11) — the list pushed Pinned off the bottom.** The popup is now two tabs,
+**Launcher** and **New for you**, opening on whichever has something to say: the
+notifications tab when the cached badge count is above zero, the launcher otherwise. This
+supersedes Phase 3.1's decision 4 ("below the grid, above Pinned"). Moving the list to the
+bottom was the smaller diff and was rejected — the badge would then point at something you
+have to scroll to find, which is most of what Phase 3.1 was for.
+
+**Isara (#13) — a clicked item was still listed next time.** A `notifClicked` array in
+`storage.local` filters them out for good. Keys are `` `${source}:${id}` `` — never the bare
+id, because `NotificationItem.id` is only unique *within* a source, so `announcements:1` and
+`news:1` are different items that share an id.
+
+### Three things reading the code turned up that the feedback did not
+
+- **`LIST_CAP = 8` never bounded Jalana's case.** The cap only trims already-*seen* items —
+  the fresh/seen partition is deliberate so a time-sort can't drop an unread item to make
+  room for a read one. Nobody had written down the consequence: `fresh` is uncapped, so
+  "50 new things" really does render 50 rows.
+- **A fire-and-forget click write would have been lost most of the time.** `openUrl()` calls
+  `window.close()` on the same synchronous turn, and `addClicked` is a read-modify-write
+  whose `set()` only issues after its `get()` resolves — by then the popup context is gone.
+  The notification row therefore does **not** use `openUrl()`: it opens the tab first (so the
+  member sees no delay), **awaits** the write, then closes.
+- **Pruning the clicked set against the whole payload un-clicks everything during an
+  outage.** A source flagged `unavailable` or absent keeps every key it has; only healthy
+  sources are pruned. Otherwise one Discord outage makes every dismissed announcement
+  reappear an hour later when the source recovers.
+
+### "Seen" now means the panel was on screen
+
+`advanceLastSeen()` moved out of `renderNotifications()` and into the tab strip's `onShow`
+callback. The panel renders on every open, including opens that land on Launcher — leaving
+the advance at render time would clear the badge for a member who never looked, silently.
+
+**This is the visible behaviour change in v0.4.0**: previously *any* popup open cleared the
+badge. It is called out in the release notes and the forum reply for that reason.
+
+It also closes the `advanceLastSeen` housekeeping-backlog item, which was waiting on exactly
+this decision. Note the gate is currently defensive rather than load-bearing: under the
+default-tab rule the panel is hidden at open only when the count is zero, in which case the
+advance it skips would have been a no-op anyway. The two rules happen to make each other
+safe, which is the argument for putting the line where it is obviously right rather than
+where it is accidentally right.
+
+### `src/popup/tab-strip.ts` — a new module, and why
+
+The strip owns visibility, `aria-selected`, roving `tabindex` and arrow-key activation
+(automatic: with two tabs, arriving is choosing). It takes its elements as arguments and
+imports nothing from `popup.ts`, so it is unit-testable on its own.
+
+**It must never write panel content**, and there is a test asserting exactly that. The gold
+"new" dots are computed once at render from a marker that has already advanced, so anything
+re-rendering a panel on a tab switch wipes every dot mid-visit — the failure Phase 3.1's
+decision 1 exists to prevent, reintroduced through a new door.
+
+### Testing — and one thing the tests do NOT prove
+
+195 tests (up from 163). Eight mutation checks were run and independently re-run:
+dropping the clicked filter, keying on the bare id, filtering after the partition instead of
+before, inverting the default-tab comparison, no-op'ing the prune, letting the prune treat an
+`unavailable` source as healthy, making `show()` wipe the panel, and firing `onShow` for only
+one tab. All eight turn a named test red.
+
+`tests/popup-tabs.integration.test.ts` boots the real `popup.ts` against the real
+`popup.html` under jsdom. The `DOMContentLoaded` handler is **intercepted at registration**
+rather than dispatched — re-importing the module leaves its listener on the shared jsdom
+`document`, which survives a body swap, so a plain dispatch on the fourth boot fires four
+handlers and every call-count assertion reads garbage.
+
+**The tests do not prove the `await` on the clicked write matters.** Replacing it with
+fire-and-forget leaves them green, because jsdom's `window.close()` is a no-op that never
+destroys the context. Only a real popup teardown distinguishes the two. That claim stays
+manual, and the test file says so where a reader will see it.
+
+### Two bugs Claude caught reviewing Codex's diffs
+
+- **The notification list lost its side padding.** It used to sit inside
+  `<section class="sec">`, which is where `12px 14px` came from; its own tab panel had none,
+  so rows ran flush to the edge of a 360px popup. Invisible in the diff — every id was
+  preserved and the structure was exactly as planned. Caught by inlining `popup.css` into
+  `popup.html` with sample rows and rendering it in headless Chrome.
+- **`Promise.all(...).then(mountTabs)` tied the tab strip to unrelated renders.**
+  `renderPins()`, `personalize()` and `renderNotifications()` had always failed
+  independently; `all` meant a rejection in any of them skipped `mountTabs`, leaving `#tabs`
+  and `#tab-notifs` both hidden — the popup degrading to launcher-only with the notifications
+  unreachable and nothing on screen saying why. Now `allSettled`.
+
+### Not in this release, deliberately
+
+No cross-device sync of read or clicked state (nothing about what a member has read leaves
+their machine, and that is a stated privacy property). No "mark all read" — showing the panel
+already does it. No history view or way to recover a clicked item; if a tester asks, that is
+its own phase. No per-source tabs. No DOM harness around `popup.ts`'s first-render path
+beyond the integration file above.
+
 ## Housekeeping backlog
 
+- ~~**`advanceLastSeen` re-scans the payload that `buildNotificationList` already walked**~~
+  — **RESOLVED in v0.4.0.** The design call it was waiting on got made: "seen" means the
+  panel was on screen, so the advance moved into the tab strip's `onShow` and the display cap
+  does not enter into it. Original entry below for context.
 - **`advanceLastSeen` re-scans the payload that `buildNotificationList` already walked** —
   same divergence risk `isItemNew` was extracted to close, found in the 2026-08-13
   `/simplify` pass (PR #11) and deliberately left alone rather than fixed as a drive-by.
