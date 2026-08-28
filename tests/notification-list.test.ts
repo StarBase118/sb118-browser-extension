@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildNotificationList } from '@/lib/notification-list'
+import { buildNotificationList, selectDefaultTab } from '@/lib/notification-list'
 import { ALL_SOURCES, type NotificationSource } from '@/lib/notifications-types'
 
 const item = (id: string, at: string, title = id) => ({ id, title, url: `https://x/${id}`, at })
@@ -233,5 +233,23 @@ describe('clicked items', () => {
     const { items } = buildNotificationList(sources, marker, ['news'], new Set(['news:1']))
     expect(items.every((i) => i.id !== '1')).toBe(true)
     expect(items.map((i) => i.isNew)).toEqual([true])
+  })
+})
+
+describe('selectDefaultTab', () => {
+  it('opens on the notifications tab when something is new', () => {
+    expect(selectDefaultTab(1, 3)).toBe('notifs')
+    expect(selectDefaultTab(50, 1)).toBe('notifs')
+  })
+
+  it('opens on the launcher when nothing is new', () => {
+    expect(selectDefaultTab(0, 3)).toBe('launcher')
+  })
+
+  // Every source switched off means there is no tab strip at all, so the
+  // launcher is the whole popup regardless of a stale count.
+  it('opens on the launcher when every source is disabled', () => {
+    expect(selectDefaultTab(5, 0)).toBe('launcher')
+    expect(selectDefaultTab(0, 0)).toBe('launcher')
   })
 })

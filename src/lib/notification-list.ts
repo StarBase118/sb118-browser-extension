@@ -98,3 +98,18 @@ export function buildNotificationList(
     state: 'ok',
   }
 }
+
+export type PopupTab = 'launcher' | 'notifs'
+
+/**
+ * Which tab the popup opens on.
+ *
+ * Reads the cached badge count rather than the built list, deliberately: it is
+ * the number the toolbar icon is showing, so the tab and the icon tell one
+ * story. `enabledCount` of zero means every source is switched off, in which
+ * case there is no tab strip and the launcher is the whole popup.
+ */
+export function selectDefaultTab(newCount: number, enabledCount: number): PopupTab {
+  if (enabledCount === 0) return 'launcher'
+  return newCount > 0 ? 'notifs' : 'launcher'
+}
