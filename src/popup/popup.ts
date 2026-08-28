@@ -9,6 +9,8 @@ import { getNav, syncNavCache } from '@/lib/nav-cache'
 import { destinationGroup } from '@/lib/destinations'
 import { runSearch, pendingSources, type SearchContext } from '@/lib/search'
 import {
+  addClicked,
+  clickedKey,
   getCachedCount,
   getCachedItems,
   getClicked,
@@ -417,7 +419,17 @@ function buildNotifRow(item: DisplayItem): HTMLAnchorElement {
 
   body.append(title, meta)
   a.append(dot, body)
-  a.addEventListener('click', (e) => { e.preventDefault(); openUrl(item.url) })
+  // NOT openUrl(): that calls window.close() on the same synchronous turn, and
+  // addClicked is a read-modify-write whose set() is only issued after its
+  // get() resolves — by which point this context is gone and the write is
+  // dropped. Tab first so the member sees no delay, then the write, awaited,
+  // then close.
+  a.addEventListener('click', async (e) => {
+    e.preventDefault()
+    browser.tabs.create({ url: item.url })
+    await addClicked(clickedKey(item.source, item.id)).catch(() => {})
+    window.close()
+  })
   return a
 }
 
