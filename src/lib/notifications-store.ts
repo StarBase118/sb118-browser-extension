@@ -10,6 +10,7 @@ import {
 const LAST_SEEN_KEY = 'notifLastSeen'
 const COUNT_KEY = 'notifCount'
 const ITEMS_KEY = 'notifItems'
+const CLICKED_KEY = 'notifClicked'
 
 function isPlainRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -83,4 +84,29 @@ export async function getCachedItems(): Promise<NotificationsResponse['sources']
 
 export async function setCachedItems(sources: NotificationsResponse['sources']): Promise<void> {
   await browser.storage.local.set({ [ITEMS_KEY]: sources })
+}
+
+/**
+ * `${source}:${id}` — never the bare id.
+ *
+ * NotificationItem.id is only unique WITHIN a source, so a sim and a Community
+ * News item can both legitimately be "1234". Keying on the bare id would hide
+ * an unrelated row in another source, rarely enough to look like a ghost.
+ */
+export function clickedKey(source: NotificationSource, id: string): string {
+  return `${source}:${id}`
+}
+
+function isClickedList(v: unknown): v is string[] {
+  return Array.isArray(v) && v.every((k) => typeof k === 'string')
+}
+
+export async function getClicked(): Promise<string[]> {
+  return readStorage(CLICKED_KEY, isClickedList, [])
+}
+
+export async function addClicked(key: string): Promise<void> {
+  const current = await getClicked()
+  if (current.includes(key)) return
+  await browser.storage.local.set({ [CLICKED_KEY]: [...current, key] })
 }

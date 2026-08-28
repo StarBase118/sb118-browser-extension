@@ -10,8 +10,11 @@ vi.mock('webextension-polyfill', () => ({
 }))
 
 import {
+  addClicked,
+  clickedKey,
   getCachedCount,
   getCachedItems,
+  getClicked,
   getLastSeen,
   setCachedCount,
   setCachedItems,
@@ -84,5 +87,37 @@ describe('cached items', () => {
   ])('returns null for %s', async (_label, value) => {
     store.notifItems = value
     expect(await getCachedItems()).toBeNull()
+  })
+})
+
+describe('clicked keys', () => {
+  it('keys by source and id, never the bare id', () => {
+    expect(clickedKey('announcements', '1')).toBe('announcements:1')
+    expect(clickedKey('news', '1')).toBe('news:1')
+    expect(clickedKey('announcements', '1')).not.toBe(clickedKey('news', '1'))
+  })
+
+  it('defaults to an empty list', async () => {
+    expect(await getClicked()).toEqual([])
+  })
+
+  it('round-trips a clicked key', async () => {
+    await addClicked('sims:42')
+    expect(await getClicked()).toEqual(['sims:42'])
+  })
+
+  it('stores a repeated key once', async () => {
+    await addClicked('sims:42')
+    await addClicked('sims:42')
+    expect(await getClicked()).toEqual(['sims:42'])
+  })
+
+  // A half-written or hand-edited value must not throw on read; the member
+  // simply sees rows they had dismissed, which is recoverable by clicking again.
+  it('ignores malformed clicked storage', async () => {
+    store.notifClicked = 'sims:42'
+    expect(await getClicked()).toEqual([])
+    store.notifClicked = ['sims:42', 7]
+    expect(await getClicked()).toEqual([])
   })
 })
