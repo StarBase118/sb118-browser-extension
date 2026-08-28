@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SB118 extension Phase 3.2 &mdash; spec companion</title>
+<style>
+  :root {
+    --gutter: 1.5rem;
+    --inset: 1.1rem;
+
+    --ink: #1e232b;
+    --muted: #667085;
+    --line: #e2e5ea;
+    --page: #f6f7f9;
+    --card: #ffffff;
+    --accent: #2b5fa8;
+    --accent-soft: #eef3fb;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    --add: #1a7f4b;
+    --add-bg: #eefaf3;
+    --del: #b42318;
+    --del-bg: #fef3f2;
+    --warn: #b45309;
+    --warn-bg: #fffbeb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header { background: var(--ink); color: #fff; padding: 2.5rem 0 2.25rem; }
+  header .inner {
+    max-width: 72rem; margin: 0 auto;
+    padding-left:  calc(var(--gutter) + var(--inset));
+    padding-right: calc(var(--gutter) + var(--inset));
+  }
+  header .kicker {
+    text-transform: uppercase; letter-spacing: .12em; font-size: .75rem;
+    opacity: .7; margin-bottom: .5rem;
+  }
+  header h1 { margin: 0 0 .5rem; font-size: 2rem; letter-spacing: -.015em; line-height: 1.2; }
+  header .sub { margin: 0; opacity: .8; font-size: .95rem; }
+  header code {
+    background: rgba(255,255,255,.14); color: #fff;
+    border: 1px solid rgba(255,255,255,.22);
+  }
+  .status-pill {
+    display: inline-block; margin-top: 1rem;
+    background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3);
+    border-radius: 999px; padding: .3rem .9rem; font-size: .8rem;
+  }
+
+  .shell {
+    max-width: 72rem; margin: 0 auto; display: flex; gap: 2.5rem;
+    padding-left: var(--gutter); padding-right: var(--gutter);
+    padding-top: 3.25rem; padding-bottom: 5rem;
+    align-items: flex-start;
+  }
+  nav {
+    flex: 0 0 15rem; position: sticky; top: 1.5rem;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: var(--inset);
+  }
+  nav h2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 0 0 .7rem; }
+  nav ul { list-style: none; margin: 0; padding: 0; }
+  nav a {
+    display: block; padding: .32rem .45rem; margin: 0 -.45rem;
+    color: var(--ink); text-decoration: none; font-size: .875rem;
+    border-radius: 6px; line-height: 1.35;
+  }
+  nav a:hover { background: var(--page); }
+  nav a.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+  article { flex: 1 1 auto; min-width: 0; }
+
+  section {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 1.5rem 1.7rem 1.7rem; margin-bottom: 1.25rem;
+    scroll-margin-top: 1.5rem;
+  }
+  h2 { margin: 0 0 .9rem; font-size: 1.3rem; letter-spacing: -.01em; }
+  h3 { margin: 1.7rem 0 .6rem; font-size: 1rem; }
+  h3:first-of-type { margin-top: .9rem; }
+  p { margin: .7rem 0; }
+  ul, ol { margin: .7rem 0; padding-left: 1.35rem; }
+  li { margin: .4rem 0; }
+  code { background: var(--page); border-radius: 4px; padding: .1rem .35rem; font-family: var(--mono); font-size: .875em; }
+  blockquote {
+    margin: 1rem 0; padding: .2rem 0 .2rem 1rem;
+    border-left: 3px solid var(--line); color: var(--muted); font-size: .93rem;
+  }
+  .hint { color: var(--muted); font-size: .85rem; font-style: italic; }
+
+  /* The 4px accent border adds to the box's inset, so subtract it from the
+     left padding or this card's text starts 4px right of every other card. */
+  .verdict {
+    background: var(--accent-soft); border: 1px solid #cfdcef;
+    border-left: 4px solid var(--accent);
+    border-radius: 10px; margin-bottom: 1.25rem;
+    padding: 1.1rem 1.3rem 1.1rem calc(1.3rem - 3px);
+  }
+  .verdict h2 { margin: 0 0 .5rem; font-size: 1.05rem; color: var(--accent); }
+  .verdict p:last-child { margin-bottom: 0; }
+
+  figure.diagram { margin: 1.2rem 0; }
+  figure.diagram .frame {
+    overflow-x: auto; background: var(--page);
+    border: 1px solid var(--line); border-radius: 10px; padding: 1.2rem;
+  }
+  figure.diagram svg { display: block; max-width: 100%; height: auto; }
+  figure.diagram figcaption { margin-top: .5rem; font-size: .85rem; color: var(--muted); }
+
+  .file-tree {
+    font-family: var(--mono); font-size: .82rem; line-height: 1.75;
+    background: var(--page); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1rem 1.1rem; margin: 1.1rem 0; overflow-x: auto;
+    /* The tree's newlines and indentation ARE the diagram — without this the
+       whole block reflows into one paragraph. */
+    white-space: pre;
+  }
+  .file-tree .t-add { color: var(--add); }
+  .file-tree .t-mod { color: var(--warn); }
+  .file-tree .t-del { color: var(--del); text-decoration: line-through; }
+  .file-tree .t-note { color: var(--muted); }
+
+  .table-wrap {
+    width: 100%; overflow-x: auto; margin: 1.1rem 0;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--card);
+  }
+  table { width: 100%; min-width: 34rem; border-collapse: collapse; }
+  th, td { text-align: left; vertical-align: top; padding: .65rem .8rem; border-bottom: 1px solid var(--line); }
+  th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); background: var(--page); }
+  tr:last-child td { border-bottom: 0; }
+  td.type { font-family: var(--mono); font-size: .82rem; color: var(--accent); white-space: nowrap; }
+  .data-model caption {
+    caption-side: top; text-align: left; font-family: var(--mono); font-size: .85rem;
+    padding: .65rem .8rem; background: var(--page); border-bottom: 1px solid var(--line); color: var(--ink);
+  }
+
+  .diff {
+    font-family: var(--mono); font-size: .82rem; line-height: 1.7;
+    border: 1px solid var(--line); border-radius: 10px; margin: 1.1rem 0;
+    overflow-x: auto; background: var(--card);
+  }
+  .diff .f { background: var(--page); padding: .5rem .9rem; border-bottom: 1px solid var(--line); color: var(--muted); font-size: .78rem; }
+  .diff .l { padding: .05rem .9rem; white-space: pre; }
+  .diff .l.add { background: var(--add-bg); color: var(--add); }
+  .diff .l.del { background: var(--del-bg); color: var(--del); }
+
+  .decision {
+    border: 1px solid var(--line); border-left: 4px solid var(--add);
+    background: var(--add-bg); border-radius: 8px; padding: .9rem 1.1rem; margin: 1.1rem 0;
+  }
+  .decision.deferred { border-left-color: var(--warn); background: var(--warn-bg); }
+  .decision .label {
+    font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--add); display: block; margin-bottom: .25rem;
+  }
+  .decision.deferred .label { color: var(--warn); }
+  .decision p { margin: .3rem 0; font-size: .93rem; }
+  .decision .why { color: var(--muted); }
+
+  .reuse { display: flex; flex-wrap: wrap; gap: .5rem; margin: .6rem 0 .3rem; font-size: .85rem; }
+  .reuse span { padding: .25rem .6rem; border-radius: 6px; }
+  .reuse .r { background: var(--page); color: var(--muted); border: 1px solid var(--line); }
+  .reuse .a { background: var(--add-bg); color: var(--add); border: 1px solid #c4e8d5; }
+
+  .open-questions { border-color: #e6d6b8; background: #fffdf7; }
+  .open-questions h2 { color: var(--warn); }
+  .open-questions ol { list-style: none; padding: 0; counter-reset: q; }
+  .open-questions li {
+    counter-increment: q; position: relative; padding-left: 2.2rem;
+    margin: 1rem 0; padding-bottom: 1rem; border-bottom: 1px solid var(--line);
+  }
+  .open-questions li:last-child { border-bottom: 0; padding-bottom: 0; }
+  .open-questions li::before {
+    content: "Q" counter(q); position: absolute; left: 0; top: .1rem;
+    font-family: var(--mono); font-size: .72rem; font-weight: 700; color: var(--warn);
+  }
+  .open-questions .q { font-weight: 600; margin: 0 0 .3rem; }
+  .open-questions .default { margin: .3rem 0 0; font-size: .9rem; color: var(--muted); }
+  .open-questions .default b { color: var(--ink); }
+
+  @media (max-width: 60rem) {
+    :root { --inset: 1.1rem; }
+    .shell { display: block; padding-top: 2rem; }
+    nav { position: static; width: 100%; margin-bottom: 1.25rem; }
+    header h1 { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <div class="kicker">SB118 browser extension &middot; Spec companion</div>
+    <h1>Phase 3.2 &mdash; a tab for the notifications, and clicked items that stay gone</h1>
+    <p class="sub">Jordan Krueger &middot; August 2026 &middot; companion to <code>2026-08-28-sb118-extension-phase32-tabs-and-clicked-items-design.md</code></p>
+    <span class="status-pill">Spec approved &middot; ready to plan</span>
+  </div>
+</header>
+
+<div class="shell">
+  <nav>
+    <h2>Contents</h2>
+    <ul>
+      <li><a href="#verdict">Verdict</a></li>
+      <li><a href="#feedback">What the testers said</a></li>
+      <li><a href="#layout">The layout change</a></li>
+      <li><a href="#gate">The marker gate</a></li>
+      <li><a href="#race">The click that never landed</a></li>
+      <li><a href="#outage">The outage that un-clicks</a></li>
+      <li><a href="#file-tree">Files touched</a></li>
+      <li><a href="#data-model">What gets stored</a></li>
+      <li><a href="#decisions">Decisions</a></li>
+      <li><a href="#steps">Steps</a></li>
+      <li><a href="#open-questions">Open questions</a></li>
+    </ul>
+  </nav>
+
+  <article>
+
+    <div class="verdict">
+      <h2>Verdict</h2>
+      <p>Split the popup into two tabs &mdash; <b>Launcher</b> and <b>New for you</b> &mdash; and
+      open on whichever one has something to say. That gives Jalana her pinned links back on
+      every quiet day without burying the notification list Lhandon asked for two weeks ago.
+      Separately, remember which notification rows a member has clicked and stop showing them,
+      which is what Isara asked for. Both are contained changes to the popup and three library
+      modules; no HQ change, no new permissions, no new network call. Ships as v0.4.0.</p>
+      <p>Reading the code to write this turned up three problems the feedback did not mention,
+      and they are the reason this is a spec rather than a patch: the notification list has
+      <b>no upper bound on new items</b>, a naive click-tracking write would have been
+      <b>silently lost most of the time</b>, and a naive prune would <b>un-click everything</b>
+      whenever a source had an outage. All three are addressed below.</p>
+    </div>
+
+    <section id="feedback">
+      <h2>What the testers said</h2>
+      <p>Both replies landed on staff Discourse topic 4180 within a day of v0.3.0 shipping.</p>
+
+      <h3>Jalana Rajel, post #11 &mdash; placement</h3>
+      <blockquote>While I really like the &ldquo;New for you&rdquo; section to see what is new..
+      I do not like the placement. If there are a lot of new things I have to scroll a lot to get
+      to the pinned tabs and links which means I might just as well scroll through my bookmarks
+      to get there. [&hellip;] imagine being gone for a day and having like 50 new things</blockquote>
+
+      <h3>Isara Aleron, post #13 &mdash; clicked items</h3>
+      <blockquote>If I have any feedback, it would be to remove these items as I click on the
+      link and open the relevant page as it is then no longer &ldquo;new&rdquo; for me.</blockquote>
+
+      <p class="hint">Karrod Niac (#12) and Lhandon Nilsen (#14) both replied positively with no
+      request attached. Nothing in this phase comes from either.</p>
+    </section>
+
+    <section id="layout">
+      <h2>The layout change</h2>
+
+      <p>Jalana's &ldquo;50 new things&rdquo; is not hypothetical. <code>LIST_CAP = 8</code>
+      exists, but reading <code>buildNotificationList()</code> shows it only ever trims items the
+      member has <em>already seen</em> &mdash; the partition is deliberate, so that slicing a
+      time-sorted list can never drop an unread item to make room for a read one. The
+      consequence nobody wrote down is that the <code>fresh</code> half is uncapped. Fifty new
+      items render fifty rows.</p>
+
+      <figure class="diagram">
+        <div class="frame">
+          <svg viewBox="0 0 790 430" role="img" aria-labelledby="layout-title layout-desc" xmlns="http://www.w3.org/2000/svg">
+            <title id="layout-title">Popup layout today versus with tabs</title>
+            <desc id="layout-desc">Today the notification list sits between the launcher grid and the pinned links, pushing the pins below the bottom of the popup when many items are new. With tabs, the launcher and the notification list occupy separate panels, so neither pushes the other.</desc>
+
+            <style>
+              .lbl { font: 600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #1e232b; }
+              .cap { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #667085; }
+              .hd  { font: 700 12.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #1e232b; }
+              .tiny{ font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #667085; }
+              .frameBox { fill: #ffffff; stroke: #cfd5df; stroke-width: 1.5; }
+              .band { fill: #eef3fb; stroke: #cfdcef; }
+              .bandWarn { fill: #fef3f2; stroke: #f1c9c4; }
+              .bandOk { fill: #eefaf3; stroke: #c4e8d5; }
+              .clip { fill: #f6f7f9; stroke: #e2e5ea; stroke-dasharray: 4 3; }
+            </style>
+
+            <!-- ============ LEFT: today ============ -->
+            <text x="8" y="16" class="hd">Today (v0.3.0)</text>
+            <text x="8" y="32" class="cap">busy week &#8212; the list has no ceiling</text>
+
+            <rect x="8" y="42" width="260" height="330" rx="10" class="frameBox"/>
+
+            <rect x="20" y="54" width="236" height="22" rx="5" fill="#1e232b"/>
+            <text x="30" y="69" class="tiny" fill="#ffffff">SB118</text>
+            <rect x="20" y="82" width="236" height="20" rx="5" fill="#f6f7f9" stroke="#e2e5ea"/>
+            <text x="30" y="96" class="tiny">Search SB118&#8230;</text>
+
+            <rect x="20" y="110" width="73" height="26" rx="5" class="band"/>
+            <rect x="101" y="110" width="73" height="26" rx="5" class="band"/>
+            <rect x="183" y="110" width="73" height="26" rx="5" class="band"/>
+            <text x="30" y="127" class="tiny">HQ</text>
+            <text x="111" y="127" class="tiny">Wiki</text>
+            <text x="193" y="127" class="tiny">Discord</text>
+
+            <text x="20" y="156" class="lbl">New for you</text>
+            <text x="148" y="156" class="tiny" fill="#b42318">50 rows, uncapped</text>
+            <rect x="20" y="164" width="236" height="18" rx="4" class="bandWarn"/>
+            <rect x="20" y="186" width="236" height="18" rx="4" class="bandWarn"/>
+            <rect x="20" y="208" width="236" height="18" rx="4" class="bandWarn"/>
+            <rect x="20" y="230" width="236" height="18" rx="4" class="bandWarn"/>
+            <rect x="20" y="252" width="236" height="18" rx="4" class="bandWarn"/>
+            <rect x="20" y="274" width="236" height="18" rx="4" class="bandWarn"/>
+            <rect x="20" y="296" width="236" height="18" rx="4" class="bandWarn"/>
+            <rect x="20" y="318" width="236" height="18" rx="4" class="bandWarn"/>
+            <rect x="20" y="340" width="236" height="18" rx="4" class="bandWarn"/>
+
+            <rect x="8" y="378" width="260" height="44" rx="8" class="clip"/>
+            <text x="20" y="396" class="lbl" fill="#b42318">Pinned</text>
+            <text x="20" y="412" class="cap" fill="#b42318">below the fold &#8212; scroll to reach</text>
+
+            <!-- ============ divider ============ -->
+            <line x1="300" y1="42" x2="300" y2="400" stroke="#e2e5ea" stroke-width="1"/>
+
+            <!-- ============ RIGHT: phase 3.2 ============ -->
+            <text x="330" y="16" class="hd">Phase 3.2</text>
+            <text x="330" y="32" class="cap">two panels &#8212; neither pushes the other</text>
+
+            <!-- quiet day -->
+            <rect x="330" y="42" width="185" height="248" rx="10" class="frameBox"/>
+            <text x="330" y="308" class="cap">Quiet day &#8594; opens on Launcher</text>
+
+            <rect x="342" y="54" width="161" height="18" rx="5" fill="#1e232b"/>
+            <text x="350" y="67" class="tiny" fill="#ffffff">SB118</text>
+            <rect x="342" y="78" width="161" height="16" rx="4" fill="#f6f7f9" stroke="#e2e5ea"/>
+            <text x="350" y="90" class="tiny">Search&#8230;</text>
+
+            <rect x="342" y="100" width="57" height="19" rx="4" class="bandOk"/>
+            <rect x="403" y="100" width="76" height="19" rx="4" fill="#f6f7f9" stroke="#e2e5ea"/>
+            <text x="349" y="114" class="tiny" fill="#1a7f4b">Launcher</text>
+            <text x="410" y="114" class="tiny">New for you</text>
+
+            <rect x="342" y="127" width="49" height="22" rx="4" class="band"/>
+            <rect x="398" y="127" width="49" height="22" rx="4" class="band"/>
+            <rect x="454" y="127" width="49" height="22" rx="4" class="band"/>
+            <text x="342" y="170" class="lbl">Pinned</text>
+            <rect x="342" y="178" width="161" height="17" rx="4" class="bandOk"/>
+            <rect x="342" y="199" width="161" height="17" rx="4" class="bandOk"/>
+            <text x="342" y="234" class="lbl">Staff</text>
+            <rect x="342" y="242" width="161" height="17" rx="4" class="bandOk"/>
+            <text x="349" y="278" class="tiny" fill="#1a7f4b">all visible, no scroll</text>
+
+            <!-- busy day -->
+            <rect x="545" y="42" width="185" height="248" rx="10" class="frameBox"/>
+            <text x="545" y="308" class="cap">50 new &#8594; opens on New for you</text>
+
+            <rect x="557" y="54" width="161" height="18" rx="5" fill="#1e232b"/>
+            <text x="565" y="67" class="tiny" fill="#ffffff">SB118</text>
+            <rect x="557" y="78" width="161" height="16" rx="4" fill="#f6f7f9" stroke="#e2e5ea"/>
+            <text x="565" y="90" class="tiny">Search&#8230;</text>
+
+            <rect x="557" y="100" width="57" height="19" rx="4" fill="#f6f7f9" stroke="#e2e5ea"/>
+            <rect x="618" y="100" width="100" height="19" rx="4" class="band"/>
+            <text x="564" y="114" class="tiny">Launcher</text>
+            <text x="625" y="114" class="tiny" fill="#2b5fa8">New for you 9+</text>
+
+            <rect x="557" y="127" width="161" height="17" rx="4" class="bandWarn"/>
+            <rect x="557" y="148" width="161" height="17" rx="4" class="bandWarn"/>
+            <rect x="557" y="169" width="161" height="17" rx="4" class="bandWarn"/>
+            <rect x="557" y="190" width="161" height="17" rx="4" class="bandWarn"/>
+            <rect x="557" y="211" width="161" height="17" rx="4" class="bandWarn"/>
+            <rect x="557" y="232" width="161" height="17" rx="4" class="bandWarn"/>
+            <rect x="557" y="253" width="161" height="17" rx="4" class="bandWarn"/>
+            <text x="564" y="278" class="tiny">Launcher tab: one click</text>
+          </svg>
+        </div>
+        <figcaption>The list stays uncapped &mdash; that is deliberate, and unchanged. What changes
+        is that it no longer sits between the member and their pins.</figcaption>
+      </figure>
+
+      <p><b>Why not just move it to the bottom?</b> That was Jalana's other suggestion and it is
+      the smallest possible diff. It was rejected because the badge would then point at something
+      you have to scroll to find, which is most of what Phase 3.1 was for. Capping the section's
+      height and scrolling inside it was also considered: it bounds the damage without removing
+      it, since Jalana still scrolls past a section she did not come for, on every open.</p>
+    </section>
+
+    <section id="gate">
+      <h2>The marker gate</h2>
+
+      <p>Splitting the popup into panels separates two things that used to be the same event:
+      <em>rendering</em> the notification list, and the member <em>seeing</em> it. Today
+      <code>advanceLastSeen()</code> runs at the end of <code>renderNotifications()</code>, which
+      is correct only because there was nowhere for the list to hide.</p>
+
+      <p>With tabs, the panel renders on every open including opens that land on Launcher.
+      Left alone, that clears the badge for a member who never looked &mdash; silently, and
+      losing information. So the advance moves into <code>showNotifs()</code>, the one function
+      that makes the panel visible.</p>
+
+      <div class="decision">
+        <span class="label">Decided</span>
+        <p><b>&ldquo;Seen&rdquo; means the panel was on screen.</b> A source's marker advances to
+        the newest item in the payload it was showing, and the display cap does not enter into
+        it.</p>
+        <p class="why">This also closes the <code>advanceLastSeen</code> entry in the repo's
+        housekeeping backlog, which had been left alone pending exactly this call.</p>
+      </div>
+
+      <p><b>An honest note:</b> under the default-tab rule, this gate never actually fires. The
+      panel is hidden at open only when the cached count is zero, which means nothing in the
+      payload is newer than its marker, which means the advance it skips would have been a no-op
+      anyway. The two decisions happen to make each other safe.</p>
+
+      <p>That coincidence is the argument for the move, not against it. Leaving the advance in
+      <code>renderNotifications()</code> makes the marker's correctness depend on a rule living
+      in a different function &mdash; one that nothing states and no test protects. The first
+      change to the default-tab rule breaks it without a sound.</p>
+    </section>
+
+    <section id="race">
+      <h2>The click that never landed</h2>
+
+      <p>The obvious way to record a click is to call the storage write and let it run. It would
+      have failed most of the time.</p>
+
+      <p><code>openUrl()</code> calls <code>browser.tabs.create()</code> and then
+      <code>window.close()</code> on the same synchronous turn. Recording a click is a
+      read-modify-write: its <code>set</code> is only issued after its <code>get</code> resolves,
+      by which point the popup context is gone. The write is dropped &mdash; silently, and
+      precisely on the feature the phase exists to deliver.</p>
+
+      <div class="diff">
+        <div class="f">src/popup/popup.ts &mdash; the notification row's click handler</div>
+        <div class="l del">- a.addEventListener('click', (e) =&gt; {</div>
+        <div class="l del">-   e.preventDefault()</div>
+        <div class="l del">-   openUrl(item.url)          // tabs.create() then window.close()</div>
+        <div class="l del">- })</div>
+        <div class="l add">+ a.addEventListener('click', async (e) =&gt; {</div>
+        <div class="l add">+   e.preventDefault()</div>
+        <div class="l add">+   // Tab first: the member's navigation must not wait on bookkeeping.</div>
+        <div class="l add">+   browser.tabs.create({ url: item.url })</div>
+        <div class="l add">+   // Then the write, AWAITED — window.close() destroys this context,</div>
+        <div class="l add">+   // and a read-modify-write started but not finished here never lands.</div>
+        <div class="l add">+   await addClicked(clickedKey(item.source, item.id)).catch(() =&gt; {})</div>
+        <div class="l add">+   window.close()</div>
+        <div class="l add">+ })</div>
+      </div>
+
+      <p>Opening the tab first means the member sees no delay at all; only the popup's own
+      closing waits, by a few milliseconds. Routing the write through the background worker via
+      <code>runtime.sendMessage</code> would also survive teardown, and was rejected as the
+      larger change &mdash; a new message type, a new worker handler, and a second owner for a
+      key the popup is the only writer of.</p>
+
+      <p class="hint">Devtools cannot throttle extension storage, so the manual test proves this
+      by inserting a two-second delay into the write and confirming the popup visibly hangs open
+      &mdash; then removing the <code>await</code> and confirming the clicked row comes back.</p>
+    </section>
+
+    <section id="outage">
+      <h2>The outage that un-clicks everything</h2>
+
+      <p>The clicked-key list has to be pruned or it grows forever. The obvious prune &mdash;
+      drop any key whose item is no longer in the payload &mdash; has a failure mode worth
+      drawing.</p>
+
+      <figure class="diagram">
+        <div class="frame">
+          <svg viewBox="0 0 660 268" role="img" aria-labelledby="prune-title prune-desc" xmlns="http://www.w3.org/2000/svg">
+            <title id="prune-title">Naive pruning versus healthy-source pruning during an outage</title>
+            <desc id="prune-desc">When the announcements source is unavailable, a naive prune deletes every announcement key, so dismissed rows reappear once the source recovers. Scoping the prune to healthy sources leaves those keys untouched.</desc>
+            <style>
+              .h  { font: 700 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #1e232b; }
+              .m  { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #1e232b; }
+              .mm { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #667085; }
+              .c  { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #667085; }
+              .bad  { fill: #fef3f2; stroke: #f1c9c4; }
+              .good { fill: #eefaf3; stroke: #c4e8d5; }
+              .neu  { fill: #f6f7f9; stroke: #e2e5ea; }
+            </style>
+
+            <text x="8" y="16" class="h">Payload during a Discord outage</text>
+            <rect x="8" y="26" width="200" height="80" rx="8" class="neu"/>
+            <text x="20" y="46" class="mm">announcements:</text>
+            <text x="20" y="62" class="m" fill="#b42318">unavailable: true</text>
+            <text x="20" y="82" class="mm">sims: 12 items</text>
+            <text x="20" y="98" class="mm">news: 4 items</text>
+
+            <line x1="212" y1="66" x2="252" y2="66" stroke="#cfd5df" stroke-width="1.5"/>
+            <polygon points="252,66 245,62 245,70" fill="#cfd5df"/>
+
+            <text x="262" y="16" class="h">Naive prune</text>
+            <rect x="262" y="26" width="180" height="80" rx="8" class="bad"/>
+            <text x="274" y="48" class="mm">keeps sims:*, news:*</text>
+            <text x="274" y="68" class="m" fill="#b42318">DELETES every</text>
+            <text x="274" y="84" class="m" fill="#b42318">announcements:* key</text>
+            <text x="262" y="126" class="c">Source recovers an hour later &mdash;</text>
+            <text x="262" y="142" class="c">every dismissed announcement is</text>
+            <text x="262" y="158" class="c">back in the list.</text>
+
+            <text x="470" y="16" class="h">Scoped prune</text>
+            <rect x="470" y="26" width="180" height="80" rx="8" class="good"/>
+            <text x="482" y="48" class="mm">prunes sims:*, news:*</text>
+            <text x="482" y="68" class="m" fill="#1a7f4b">LEAVES every</text>
+            <text x="482" y="84" class="m" fill="#1a7f4b">announcements:* key</text>
+            <text x="470" y="126" class="c">Source recovers &mdash; dismissed</text>
+            <text x="470" y="142" class="c">rows stay dismissed. The array</text>
+            <text x="470" y="158" class="c">holds a bounded extra until then.</text>
+
+            <rect x="8" y="182" width="642" height="70" rx="8" class="neu"/>
+            <text x="22" y="203" class="h">The rule</text>
+            <text x="22" y="222" class="c">Only keys whose <tspan class="mm">source:</tspan> prefix names a source that is present in the payload AND</text>
+            <text x="22" y="239" class="c">not flagged unavailable are eligible. If the cache is unreadable, nothing is pruned at all.</text>
+          </svg>
+        </div>
+        <figcaption>An item that simply ages out of a healthy payload is pruned and cannot return,
+        so the array still converges on the size of one payload.</figcaption>
+      </figure>
+    </section>
+
+    <section id="file-tree">
+      <h2>Files touched</h2>
+      <div class="file-tree">
+src/
+  popup/
+    <span class="t-mod">popup.html</span>      <span class="t-note">tab strip + two panels; #notifs section becomes #tab-notifs</span>
+    <span class="t-mod">popup.css</span>       <span class="t-note">.tabs / .tab / .tab-count</span>
+    <span class="t-mod">popup.ts</span>        <span class="t-note">showNotifs() / showLauncher(); marker moves; click handler awaits</span>
+  lib/
+    <span class="t-mod">notification-list.ts</span>    <span class="t-note">clicked filter + selectDefaultTab()</span>
+    <span class="t-mod">notifications-store.ts</span>  <span class="t-note">notifClicked: get / add / prune</span>
+tests/
+  <span class="t-mod">notification-list.test.ts</span>
+  <span class="t-mod">notifications-store.test.ts</span>
+
+<span class="t-note">Unchanged: background.ts, notification-count.ts, prefs.ts, search-*, pins.ts</span>
+<span class="t-note">Unchanged: HQ. GET /api/me/notifications is untouched.</span>
+      </div>
+    </section>
+
+    <section id="data-model">
+      <h2>What gets stored</h2>
+
+      <div class="table-wrap">
+        <table class="data-model">
+          <caption>browser.storage.local</caption>
+          <thead>
+            <tr><th>Key</th><th>Type</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>notifClicked</code></td>
+              <td class="type">string[]</td>
+              <td><b>New.</b> Each entry is <code>`${source}:${id}`</code> &mdash; never the bare
+              id. <code>NotificationItem.id</code> is only unique within a source, so a sim and a
+              news item can both be <code>"1234"</code>; keying on the bare id would hide an
+              unrelated row, rarely enough to look like a ghost.</td>
+            </tr>
+            <tr>
+              <td><code>notifItems</code></td>
+              <td class="type">sources</td>
+              <td>Unchanged. Still the worker's cached payload, still the thing the popup
+              renders and prunes against.</td>
+            </tr>
+            <tr>
+              <td><code>notifLastSeen</code></td>
+              <td class="type">Partial&lt;Record&lt;source, ISO&gt;&gt;</td>
+              <td>Unchanged shape. What changes is <em>when</em> it is written &mdash; on panel
+              visibility rather than on render.</td>
+            </tr>
+            <tr>
+              <td><code>notifCount</code></td>
+              <td class="type">number</td>
+              <td>Unchanged, and deliberately <em>not</em> filtered by clicks. Clicking cannot
+              outrun the marker, so filtering it would change no observable number.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Nothing here leaves the member's machine. That is a stated privacy property of the
+      extension and the reason cross-device sync of read state is explicitly out of scope.</p>
+    </section>
+
+    <section id="decisions">
+      <h2>Decisions</h2>
+
+      <div class="decision">
+        <span class="label">Decided &middot; 1</span>
+        <p><b>Two tabs, not a reorder and not a scroll cap.</b> The launcher is whole and
+        unpushed; the list is whole and uncapped.</p>
+        <p class="why">Supersedes Phase 3.1 decision 4. Its reasoning &mdash; &ldquo;a launcher
+        that also reports what is new, not a notification app&rdquo; &mdash; is exactly why the
+        launcher is not the one that gets displaced.</p>
+      </div>
+
+      <div class="decision">
+        <span class="label">Decided &middot; 2</span>
+        <p><b>The popup opens on the tab that has something to say</b> &mdash; New for you when
+        the cached count is above zero, Launcher otherwise. The choice is not remembered between
+        opens.</p>
+        <p class="why">A badge that says 3 and a first screen that does not show the 3 is the
+        Phase 3.1 complaint in a new costume. A first screen that depends on something the member
+        did days ago and will not remember doing is worse than one that depends on today.</p>
+      </div>
+
+      <div class="decision">
+        <span class="label">Decided &middot; 3</span>
+        <p><b>Tab switching toggles visibility and never re-renders.</b></p>
+        <p class="why">Load-bearing, not an optimisation. <code>renderNotifications()</code>
+        recomputes <code>isNew</code> from the marker, which has already advanced by the time a
+        tab can be clicked &mdash; so a re-render would clear every gold dot mid-visit, which is
+        the exact failure Phase 3.1 decision 1 exists to prevent.</p>
+      </div>
+
+      <div class="decision">
+        <span class="label">Decided &middot; 4</span>
+        <p><b>A clicked item is filtered out of the list permanently</b>, and the write is
+        awaited before the popup closes.</p>
+        <p class="why">Isara's literal request &mdash; remove it as she clicks &mdash; is
+        unobservable, because the popup closes on that same click. What she can observe is the
+        next open, and that is what changes.</p>
+      </div>
+
+      <div class="decision">
+        <span class="label">Decided &middot; 5</span>
+        <p><b>Pruning is scoped to healthy sources.</b> A source that is absent or flagged
+        <code>unavailable</code> keeps every key it has.</p>
+      </div>
+
+      <div class="decision deferred">
+        <span class="label">Deferred</span>
+        <p><b>Automated DOM tests</b> for tab visibility, ARIA state, keyboard activation and the
+        no-rerender invariant.</p>
+        <p class="why">Every test in this repo runs against a pure module; there is no jsdom
+        harness and standing one up is larger than either feature here. Named as a known gap
+        rather than left unsaid &mdash; the three most load-bearing behaviours in this phase are
+        covered by manual steps only, and manual steps rot. If a later phase touches the popup's
+        DOM again, build the harness first.</p>
+      </div>
+    </section>
+
+    <section id="steps">
+      <h2>Steps</h2>
+      <p>Each names what it reuses before what it adds.</p>
+
+      <h3>1 &middot; The clicked set</h3>
+      <div class="reuse">
+        <span class="r">reuses <code>readStorage()</code> guard pattern</span>
+        <span class="r">reuses <code>notifications-store.ts</code></span>
+        <span class="a">adds <code>notifClicked</code> + get / add / prune</span>
+      </div>
+
+      <h3>2 &middot; Filtering the list</h3>
+      <div class="reuse">
+        <span class="r">reuses the fresh/seen partition</span>
+        <span class="r">reuses <code>LIST_CAP</code> backfill arithmetic</span>
+        <span class="a">adds a <code>clicked</code> parameter, defaulted empty</span>
+        <span class="a">adds <code>selectDefaultTab()</code></span>
+      </div>
+      <p class="hint">Filtering happens <em>before</em> the partition. That is what makes a
+      removed row backfill from the next item down rather than leave a hole.</p>
+
+      <h3>3 &middot; The tab strip</h3>
+      <div class="reuse">
+        <span class="r">reuses <code>#launcher</code> / <code>#results</code> swap for search</span>
+        <span class="r">reuses <code>badgeText()</code> for the 9+ pill</span>
+        <span class="a">adds the strip, two panels, ARIA tablist keyboard handling</span>
+      </div>
+
+      <h3>4 &middot; Moving the marker</h3>
+      <div class="reuse">
+        <span class="r">reuses <code>advanceLastSeen()</code> unchanged</span>
+        <span class="a">adds the render snapshot stash and <code>showNotifs()</code></span>
+      </div>
+      <p class="hint">The advance runs against the snapshot <code>renderNotifications()</code>
+      rendered, never a fresh storage read &mdash; otherwise a worker poll landing between render
+      and tab click marks an item seen that was never on screen.</p>
+
+      <h3>5 &middot; The awaited click write</h3>
+      <div class="reuse">
+        <span class="r">reuses <code>browser.tabs.create()</code></span>
+        <span class="a">adds a handler that does not call <code>openUrl()</code></span>
+      </div>
+
+      <h3>6 &middot; Mutation checks</h3>
+      <p>Six deliberate breaks, each with the test that must go red: dropping the clicked filter,
+      keying on the bare id, filtering after the partition, inverting the default-tab comparison,
+      no-op'ing the prune, and letting the prune treat an unavailable source as healthy.</p>
+      <p class="hint">The backfill test's fixture size is load-bearing &mdash; three seen items
+      against a cap of two is the minimum that can tell filter-before from filter-after. Do not
+      shrink it without re-running the mutation.</p>
+    </section>
+
+    <section id="open-questions" class="open-questions">
+      <h2>Open questions</h2>
+      <ol>
+        <li>
+          <p class="q">Should the v0.4.0 release notes call out that the badge now persists until
+          you look at the list?</p>
+          <p class="default">It is a visible behaviour change: previously any popup open cleared
+          it. <b>Default: yes, one line in the release notes and the forum reply.</b> It reads as
+          a bug fix to anyone who noticed the old behaviour, and as a surprise to anyone who
+          didn't.</p>
+        </li>
+        <li>
+          <p class="q">Does a clicked item need any way back?</p>
+          <p class="default">Nothing in the popup will show it again once it is filtered; the
+          member goes to Discord, HQ or the wiki as they would have anyway.
+          <b>Default: no recovery path.</b> Revisit only if a tester asks &mdash; adding one means
+          a history view, which is a phase of its own.</p>
+        </li>
+        <li>
+          <p class="q">Who replies to Jalana and Isara on topic 4180, and when?</p>
+          <p class="default"><b>Default: after v0.4.0 is live-verified, not before</b>, per the
+          standing rule that no fix is announced until it ships. Both replies name the person who
+          asked, as the previous rounds did.</p>
+        </li>
+      </ol>
+    </section>
+
+  </article>
+</div>
+
+<script>
+  // Highlight the nav entry for the section currently in view.
+  const links = [...document.querySelectorAll('nav a')];
+  const byId = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+  const obs = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      links.forEach((a) => a.classList.remove('active'));
+      byId.get(e.target.id)?.classList.add('active');
+    }
+  }, { rootMargin: '-10% 0px -75% 0px' });
+  document.querySelectorAll('section[id], div.verdict').forEach((s) => s.id && obs.observe(s));
+</script>
+
+</body>
+</html>
