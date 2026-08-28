@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- **No new dependencies.** `jsdom` and `vitest` are already devDependencies; use them. Do not add packages.
+- **No new dependencies.** `jsdom` and `vitest` are already devDependencies, and `vitest.config.ts` already sets `environment: 'jsdom'` globally for every test. Do not add packages and do not touch the vitest config.
 - **Path alias is `@/` → `src/`** (`vite.config.ts`). Import as `@/lib/notification-list`, never a relative `../../lib/...`.
 - **Every command runs from the repo root:** `npm test`, `npm run typecheck`, `npm run build`.
 - **All three must pass before any commit:** `npm test` AND `npm run typecheck` AND `npm run build`.
@@ -569,10 +569,9 @@ A new self-contained DOM module plus the markup and styles it drives. `popup.ts`
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `tests/tab-strip.test.ts`. The first line is what turns jsdom on — `jsdom` is already a devDependency and nothing else in this repo uses it.
+Create `tests/tab-strip.test.ts`. **No environment pragma is needed** — `vitest.config.ts` already sets `environment: 'jsdom'` globally, so every test in this repo has had DOM globals all along. Do not add or edit a vitest config.
 
 ```ts
-// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mountTabStrip } from '@/popup/tab-strip'
 

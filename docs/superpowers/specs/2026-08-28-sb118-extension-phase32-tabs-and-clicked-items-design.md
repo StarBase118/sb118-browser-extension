@@ -476,10 +476,16 @@ unit tests do not reach:
 
 **Correction, found while planning (2026-08-28).** An earlier draft of this section deferred
 *all* automated DOM tests on the grounds that "there is no jsdom harness and standing one up is a
-larger change." That was wrong on the facts: **`jsdom` is already a devDependency** (unused —
-nothing sets `environment: 'jsdom'`), and `tests/notifications-store.test.ts` already has a clean
-`vi.mock('webextension-polyfill')` storage double to copy. Enabling jsdom for one file is a
-single `// @vitest-environment jsdom` comment.
+larger change." That was wrong, and a first attempt at correcting it was also wrong. The facts,
+verified against the repo: **`vitest.config.ts` sets `environment: 'jsdom'` globally**, so every
+one of the 163 existing tests has had DOM globals all along — there is nothing to enable and no
+pragma to add. `tests/notifications-store.test.ts` also already has a clean
+`vi.mock('webextension-polyfill')` storage double to copy.
+
+The reason both wrong versions survived a read is worth naming: the check grepped
+`vite.config.ts`, `tsconfig.json` and `tests/` for an environment setting and found none.
+`vitest.config.ts` is a *separate file* that was never opened. Grepping the files you expected to
+matter is not the same as grepping the ones that do.
 
 So the two most load-bearing behaviours **do** get automated tests, by extracting the tab
 controller into its own module:
