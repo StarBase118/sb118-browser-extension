@@ -469,13 +469,50 @@ unit tests do not reach:
 - Any HQ change. `GET /api/me/notifications` is untouched.
 - The second housekeeping-backlog item, extracting the notification block out of `popup.ts`.
   That file grows in this phase; the extraction is still worth doing and is still not this.
-- **Automated DOM tests** for tab visibility, ARIA state, keyboard activation and the
-  no-rerender invariant. Every test in this repo runs against a pure module; there is no jsdom
-  harness and standing one up is a larger change than either feature here. Named as a known
-  gap rather than left unsaid: the three most load-bearing behaviours in this phase —
-  decision 3's no-rerender, decision 4's visibility gate, and the awaited click write — are
-  covered by manual steps only, and manual steps rot. If a later phase touches the popup's
-  DOM again, building the harness first is the right call.
+- **A DOM harness around `popup.ts` itself.** Importing that module runs its
+  `DOMContentLoaded` wiring and pulls in the whole popup graph; standing that up is larger than
+  either feature here. The awaited click write and the full first-render path stay covered by
+  the manual steps above.
+
+**Correction, found while planning (2026-08-28).** An earlier draft of this section deferred
+*all* automated DOM tests on the grounds that "there is no jsdom harness and standing one up is a
+larger change." That was wrong, and a first attempt at correcting it was also wrong. The facts,
+verified against the repo: **`vitest.config.ts` sets `environment: 'jsdom'` globally**, so every
+one of the 163 existing tests has had DOM globals all along — there is nothing to enable and no
+pragma to add. `tests/notifications-store.test.ts` also already has a clean
+`vi.mock('webextension-polyfill')` storage double to copy.
+
+The reason both wrong versions survived a read is worth naming: the check grepped
+`vite.config.ts`, `tsconfig.json` and `tests/` for an environment setting and found none.
+`vitest.config.ts` is a *separate file* that was never opened. Grepping the files you expected to
+matter is not the same as grepping the ones that do.
+
+So the two most load-bearing behaviours **do** get automated tests, by extracting the tab
+controller into its own module:
+
+- **`src/popup/tab-strip.ts`** owns the strip: which panel is visible, `aria-selected`,
+  roving `tabindex`, arrow-key activation, and an `onShow(tab)` callback. It takes its elements
+  as arguments and imports nothing from `popup.ts`, so it is testable under jsdom on its own.
+- That makes decision 3 (**switching never re-renders**) and decision 4 (**the marker advances
+  on show**) assertable: the test counts `onShow` calls and asserts the render function is
+  called exactly once across many switches.
+
+Only the wiring in `popup.ts` — which elements get passed in, and the click handler — stays
+manual. That is a much smaller uncovered surface than the original deferral claimed, and it costs
+one new file that the popup wanted anyway.
+
+## Settled before planning
+
+Three calls Jordan made on 2026-08-28, recorded here so the plan does not re-open them.
+
+1. **The v0.4.0 release notes say the badge now persists until you look at the list.** One line,
+   in the release notes and in the forum reply. It is a visible behaviour change and reads as a
+   surprise to anyone who never noticed the old one.
+2. **A clicked item gets no way back.** No history view, no undo, no "show dismissed". If a
+   tester asks for one it is a later phase with its own spec.
+3. **ClaudeAI writes the replies to Jalana and Isara on topic 4180, after v0.4.0 is launched and
+   live-verified** — never before. Both replies name the person who asked, as the previous rounds
+   did.
 
 ## Risks
 

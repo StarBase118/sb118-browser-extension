@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildNotificationList } from '@/lib/notification-list'
+import { buildNotificationList, selectDefaultTab } from '@/lib/notification-list'
 import { ALL_SOURCES, type NotificationSource } from '@/lib/notifications-types'
 
 const item = (id: string, at: string, title = id) => ({ id, title, url: `https://x/${id}`, at })
@@ -149,5 +149,107 @@ describe('buildNotificationList', () => {
       { news: { items: [], unavailable: true } }, {}, []
     )
     expect(r.state).toBe('disabled')
+  })
+})
+
+describe('clicked items', () => {
+  const at = (d: string) => `2026-08-${d}T00:00:00.000Z`
+  const marker = { news: at('01') } // everything below is newer, so all are "fresh"
+
+  it('leaves the result unchanged when nothing is clicked', () => {
+    const sources = {
+      news: { items: [{ id: '1', title: 'one', url: 'u1', at: at('10') }] },
+    }
+    const { items } = buildNotificationList(sources, marker, ['news'])
+    expect(items.map((i) => i.id)).toEqual(['1'])
+  })
+
+  it('drops a clicked item', () => {
+    const sources = {
+      news: {
+        items: [
+          { id: '1', title: 'one', url: 'u1', at: at('10') },
+          { id: '2', title: 'two', url: 'u2', at: at('09') },
+        ],
+      },
+    }
+    const { items } = buildNotificationList(sources, marker, ['news'], new Set(['news:1']))
+    expect(items.map((i) => i.id)).toEqual(['2'])
+  })
+
+  // source:id isolation. Clicking announcements:1 must not hide news:1.
+  it('does not hide a same-id item in another source', () => {
+    const sources = {
+      announcements: { items: [{ id: '1', title: 'ann', url: 'ua', at: at('10') }] },
+      news: { items: [{ id: '1', title: 'news', url: 'un', at: at('09') }] },
+    }
+    const { items } = buildNotificationList(
+      sources,
+      { announcements: at('01'), news: at('01') },
+      ['announcements', 'news'],
+      new Set(['announcements:1'])
+    )
+    expect(items.map((i) => `${i.source}:${i.id}`)).toEqual(['news:1'])
+  })
+
+  /**
+   * THE backfill case, and the reason the filter runs BEFORE the partition.
+   *
+   * FIXTURE SIZE IS LOAD-BEARING: three seen items against a cap of two is the
+   * minimum that can tell filter-before-partition from filter-after. With two
+   * items there is no third to backfill from and the mutated code passes.
+   * Do not shrink this fixture — re-run the mutation if you are tempted.
+   */
+  it('backfills when a clicked item is removed from the seen half', () => {
+    const seenMarker = { news: at('20') } // every item below is older => "seen"
+    const sources = {
+      news: {
+        items: [
+          { id: '1', title: 'one', url: 'u1', at: at('12') },
+          { id: '2', title: 'two', url: 'u2', at: at('11') },
+          { id: '3', title: 'three', url: 'u3', at: at('10') },
+        ],
+      },
+    }
+    const { items } = buildNotificationList(
+      sources,
+      seenMarker,
+      ['news'],
+      new Set(['news:1']),
+      2
+    )
+    expect(items.map((i) => i.id)).toEqual(['2', '3'])
+  })
+
+  it('drops a clicked item that is still new', () => {
+    const sources = {
+      news: {
+        items: [
+          { id: '1', title: 'one', url: 'u1', at: at('10') },
+          { id: '2', title: 'two', url: 'u2', at: at('09') },
+        ],
+      },
+    }
+    const { items } = buildNotificationList(sources, marker, ['news'], new Set(['news:1']))
+    expect(items.every((i) => i.id !== '1')).toBe(true)
+    expect(items.map((i) => i.isNew)).toEqual([true])
+  })
+})
+
+describe('selectDefaultTab', () => {
+  it('opens on the notifications tab when something is new', () => {
+    expect(selectDefaultTab(1, 3)).toBe('notifs')
+    expect(selectDefaultTab(50, 1)).toBe('notifs')
+  })
+
+  it('opens on the launcher when nothing is new', () => {
+    expect(selectDefaultTab(0, 3)).toBe('launcher')
+  })
+
+  // Every source switched off means there is no tab strip at all, so the
+  // launcher is the whole popup regardless of a stale count.
+  it('opens on the launcher when every source is disabled', () => {
+    expect(selectDefaultTab(5, 0)).toBe('launcher')
+    expect(selectDefaultTab(0, 0)).toBe('launcher')
   })
 })

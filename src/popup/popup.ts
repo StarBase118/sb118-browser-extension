@@ -8,10 +8,30 @@ import { buildFeedbackUrl } from '@/lib/feedback-link'
 import { getNav, syncNavCache } from '@/lib/nav-cache'
 import { destinationGroup } from '@/lib/destinations'
 import { runSearch, pendingSources, type SearchContext } from '@/lib/search'
-import { getCachedItems, getLastSeen, setLastSeen } from '@/lib/notifications-store'
-import { advanceLastSeen } from '@/lib/notification-count'
-import { buildNotificationList, type DisplayItem } from '@/lib/notification-list'
-import { SOURCE_LABELS as NOTIF_SOURCE_LABELS } from '@/lib/notifications-types'
+import {
+  addClicked,
+  clickedKey,
+  getCachedCount,
+  getCachedItems,
+  getClicked,
+  getLastSeen,
+  pruneClicked,
+  setLastSeen,
+} from '@/lib/notifications-store'
+import { advanceLastSeen, badgeText } from '@/lib/notification-count'
+import {
+  buildNotificationList,
+  selectDefaultTab,
+  type DisplayItem,
+  type PopupTab,
+} from '@/lib/notification-list'
+import {
+  SOURCE_LABELS as NOTIF_SOURCE_LABELS,
+  type LastSeen,
+  type NotificationSource,
+  type NotificationsResponse,
+} from '@/lib/notifications-types'
+import { mountTabStrip } from '@/popup/tab-strip'
 import {
   DEBOUNCE_MS,
   SOURCE_LABELS,
@@ -399,7 +419,17 @@ function buildNotifRow(item: DisplayItem): HTMLAnchorElement {
 
   body.append(title, meta)
   a.append(dot, body)
-  a.addEventListener('click', (e) => { e.preventDefault(); openUrl(item.url) })
+  // NOT openUrl(): that calls window.close() on the same synchronous turn, and
+  // addClicked is a read-modify-write whose set() is only issued after its
+  // get() resolves — by which point this context is gone and the write is
+  // dropped. Tab first so the member sees no delay, then the write, awaited,
+  // then close.
+  a.addEventListener('click', async (e) => {
+    e.preventDefault()
+    browser.tabs.create({ url: item.url })
+    await addClicked(clickedKey(item.source, item.id)).catch(() => {})
+    window.close()
+  })
   return a
 }
 
@@ -411,28 +441,26 @@ function notifNote(text: string): HTMLElement {
 }
 
 /**
- * Render the section, then advance the marker.
+ * The exact payload the panel rendered, held for showNotifs().
  *
- * The order is the feature. The new-set is computed from the marker as it
- * stands, rendered, and only then does the marker move — so the items the
- * badge was counting are still dotted when the member looks at them, and are
- * clear next time.
- *
- * The popup advances the marker itself rather than asking the worker to,
- * because only the popup knows which snapshot was on screen: a worker reading
- * the cache when a message arrives reads it later, and a poll landing in
- * between would mark an item seen that was never displayed.
+ * The marker must advance against THIS snapshot, never a fresh storage read —
+ * a worker poll landing between the render and the member clicking the tab
+ * would otherwise mark an item seen that was never on screen. Same reasoning
+ * that moved this write out of the worker in Phase 3.1.
  */
+let rendered: {
+  cached: NotificationsResponse['sources']
+  lastSeen: LastSeen
+  enabled: NotificationSource[]
+} | null = null
+
 async function renderNotifications(): Promise<void> {
-  const section = document.getElementById('notifs')!
   const box = document.getElementById('notiflist')!
   box.innerHTML = ''
 
-  const [cached, prefs] = await Promise.all([getCachedItems(), getPrefs()])
+  const [cached, prefs, clicked] = await Promise.all([getCachedItems(), getPrefs(), getClicked()])
   const enabled = enabledSources(prefs)
-
-  if (!enabled.length) { section.hidden = true; return }
-  section.hidden = false
+  if (!enabled.length) return
 
   if (cached === null) {
     box.appendChild(notifNote('Checking for updates…'))
@@ -441,25 +469,25 @@ async function renderNotifications(): Promise<void> {
   }
 
   const lastSeen = await getLastSeen()
-  const { items, state } = buildNotificationList(cached, lastSeen, enabled)
+  const { items, state } = buildNotificationList(cached, lastSeen, enabled, new Set(clicked))
 
-  if (state === 'disabled') { section.hidden = true; return }
+  if (state === 'disabled') return
   if (state === 'outage') {
     box.appendChild(notifNote('Couldn’t reach HQ — this list may be out of date.'))
     return
   }
   if (!items.length) {
     box.appendChild(notifNote('Nothing new right now.'))
-    return
+  } else {
+    for (const item of items) box.appendChild(buildNotifRow(item))
   }
 
-  for (const item of items) box.appendChild(buildNotifRow(item))
+  // Only what was actually rendered, and only now.
+  rendered = { cached, lastSeen, enabled }
 
-  // Only now, and only from the payload just rendered.
-  await setLastSeen(advanceLastSeen(lastSeen, cached, enabled))
-  void browser.runtime.sendMessage({ type: 'notif:refresh' }).catch(() => {
-    // The worker may be asleep; the next alarm reconciles the badge.
-  })
+  // Keys whose item has aged out of a HEALTHY source can go; a sick source
+  // keeps everything it has.
+  void pruneClicked(cached).catch(() => {})
 }
 
 /* ----------------------------------------------------------- launcher UI */
@@ -527,9 +555,70 @@ function wireReportIssue() {
   })
 }
 
+/**
+ * Advance the marker because the panel is now on screen.
+ *
+ * "Seen" means visible, not rendered — the panel renders on every open,
+ * including opens that land on Launcher, and clearing the badge for someone
+ * who never looked loses information silently.
+ *
+ * The write is AWAITED before notif:refresh: the worker recomputes the badge
+ * from stored state, so a refresh racing ahead of the write counts against the
+ * old marker and puts the number straight back.
+ */
+async function markNotifsSeen(): Promise<void> {
+  if (!rendered) return
+  const { cached, lastSeen, enabled } = rendered
+  await setLastSeen(advanceLastSeen(lastSeen, cached, enabled))
+  void browser.runtime.sendMessage({ type: 'notif:refresh' }).catch(() => {
+    // The worker may be asleep; the next alarm reconciles the badge.
+  })
+}
+
+async function mountTabs(): Promise<void> {
+  const [prefs, count] = await Promise.all([getPrefs(), getCachedCount()])
+  const enabled = enabledSources(prefs)
+
+  // Every source switched off: no strip at all, the launcher is the popup.
+  if (!enabled.length) {
+    document.getElementById('tab-notifs')!.hidden = true
+    return
+  }
+
+  const strip = document.getElementById('tabs')!
+  strip.hidden = false
+
+  const pill = document.getElementById('tab-count')!
+  const text = badgeText(count)
+  pill.textContent = text
+  pill.hidden = !text
+
+  const tabs = mountTabStrip(
+    {
+      strip,
+      launcherBtn: document.getElementById('tab-launcher-btn') as HTMLButtonElement,
+      notifsBtn: document.getElementById('tab-notifs-btn') as HTMLButtonElement,
+      launcherPanel: document.getElementById('tab-launcher')!,
+      notifsPanel: document.getElementById('tab-notifs')!,
+    },
+    { onShow: (tab: PopupTab) => { if (tab === 'notifs') void markNotifsSeen() } }
+  )
+
+  tabs.show(selectDefaultTab(count, enabled.length))
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   renderGrid(document.getElementById('grid')!, MEMBER_LINKS)
   wireReportIssue()
   wireSearch()
-  Promise.all([renderPins(), personalize(), renderNotifications()])
+  // The strip mounts only after renderNotifications() has filled the panel and
+  // set `rendered` — showing the tab is what advances the marker, so there must
+  // be a snapshot to advance against.
+  //
+  // allSettled, not all: these three already failed independently of each other,
+  // and `all` would let a rejection in renderPins() — nothing to do with
+  // notifications — skip mountTabs entirely, leaving both #tabs and #tab-notifs
+  // hidden. That degrades the popup to launcher-only with no way to reach the
+  // notifications and nothing on screen to say why.
+  void Promise.allSettled([renderPins(), personalize(), renderNotifications()]).then(mountTabs)
 })

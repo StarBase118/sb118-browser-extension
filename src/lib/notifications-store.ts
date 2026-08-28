@@ -10,6 +10,7 @@ import {
 const LAST_SEEN_KEY = 'notifLastSeen'
 const COUNT_KEY = 'notifCount'
 const ITEMS_KEY = 'notifItems'
+const CLICKED_KEY = 'notifClicked'
 
 function isPlainRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -83,4 +84,61 @@ export async function getCachedItems(): Promise<NotificationsResponse['sources']
 
 export async function setCachedItems(sources: NotificationsResponse['sources']): Promise<void> {
   await browser.storage.local.set({ [ITEMS_KEY]: sources })
+}
+
+/**
+ * `${source}:${id}` — never the bare id.
+ *
+ * NotificationItem.id is only unique WITHIN a source, so a sim and a Community
+ * News item can both legitimately be "1234". Keying on the bare id would hide
+ * an unrelated row in another source, rarely enough to look like a ghost.
+ */
+export function clickedKey(source: NotificationSource, id: string): string {
+  return `${source}:${id}`
+}
+
+function isClickedList(v: unknown): v is string[] {
+  return Array.isArray(v) && v.every((k) => typeof k === 'string')
+}
+
+export async function getClicked(): Promise<string[]> {
+  return readStorage(CLICKED_KEY, isClickedList, [])
+}
+
+export async function addClicked(key: string): Promise<void> {
+  const current = await getClicked()
+  if (current.includes(key)) return
+  await browser.storage.local.set({ [CLICKED_KEY]: [...current, key] })
+}
+
+/**
+ * Drop stored keys whose item is no longer in the payload.
+ *
+ * ONLY keys belonging to a healthy source are eligible. A source that is
+ * absent from the payload, or flagged `unavailable`, keeps every key it has —
+ * otherwise one Discord outage un-dismisses every announcement the member has
+ * already read, and they all reappear when the source recovers.
+ */
+export async function pruneClicked(sources: NotificationsResponse['sources']): Promise<void> {
+  const current = await getClicked()
+  if (!current.length) return
+
+  const healthy = new Set<string>()
+  const live = new Set<string>()
+  for (const source of ALL_SOURCES) {
+    const group = sources[source]
+    if (!group || group.unavailable) continue
+    healthy.add(source)
+    for (const item of group.items) live.add(clickedKey(source, item.id))
+  }
+
+  // A key under a sick or missing source is not evidence of anything, so it
+  // survives untouched.
+  const next = current.filter((key) => {
+    const source = key.slice(0, key.indexOf(':'))
+    return !healthy.has(source) || live.has(key)
+  })
+
+  if (next.length === current.length) return
+  await browser.storage.local.set({ [CLICKED_KEY]: next })
 }

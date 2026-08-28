@@ -10,9 +10,13 @@ vi.mock('webextension-polyfill', () => ({
 }))
 
 import {
+  addClicked,
+  clickedKey,
   getCachedCount,
   getCachedItems,
+  getClicked,
   getLastSeen,
+  pruneClicked,
   setCachedCount,
   setCachedItems,
   setLastSeen,
@@ -84,5 +88,80 @@ describe('cached items', () => {
   ])('returns null for %s', async (_label, value) => {
     store.notifItems = value
     expect(await getCachedItems()).toBeNull()
+  })
+})
+
+describe('clicked keys', () => {
+  it('keys by source and id, never the bare id', () => {
+    expect(clickedKey('announcements', '1')).toBe('announcements:1')
+    expect(clickedKey('news', '1')).toBe('news:1')
+    expect(clickedKey('announcements', '1')).not.toBe(clickedKey('news', '1'))
+  })
+
+  it('defaults to an empty list', async () => {
+    expect(await getClicked()).toEqual([])
+  })
+
+  it('round-trips a clicked key', async () => {
+    await addClicked('sims:42')
+    expect(await getClicked()).toEqual(['sims:42'])
+  })
+
+  it('stores a repeated key once', async () => {
+    await addClicked('sims:42')
+    await addClicked('sims:42')
+    expect(await getClicked()).toEqual(['sims:42'])
+  })
+
+  // A half-written or hand-edited value must not throw on read; the member
+  // simply sees rows they had dismissed, which is recoverable by clicking again.
+  it('ignores malformed clicked storage', async () => {
+    store.notifClicked = 'sims:42'
+    expect(await getClicked()).toEqual([])
+    store.notifClicked = ['sims:42', 7]
+    expect(await getClicked()).toEqual([])
+  })
+})
+
+describe('pruning clicked keys', () => {
+  const healthy = {
+    announcements: { items: [{ id: '1', title: 'a', url: 'u', at: '2026-08-20T00:00:00.000Z' }] },
+    sims: { items: [{ id: '9', title: 's', url: 'u', at: '2026-08-20T00:00:00.000Z' }] },
+  }
+
+  it('drops a key whose item is gone and keeps one that is still there', async () => {
+    store.notifClicked = ['announcements:1', 'announcements:99']
+    await pruneClicked(healthy)
+    expect(await getClicked()).toEqual(['announcements:1'])
+  })
+
+  // THE outage case. A source that failed says nothing about what the member
+  // dismissed; deleting its keys makes every dismissed row reappear when it
+  // recovers.
+  it('keeps every key of a source flagged unavailable', async () => {
+    store.notifClicked = ['announcements:1', 'announcements:99', 'sims:404']
+    await pruneClicked({
+      announcements: { items: [], unavailable: true },
+      sims: { items: [{ id: '9', title: 's', url: 'u', at: '2026-08-20T00:00:00.000Z' }] },
+    })
+    expect((await getClicked()).sort()).toEqual(['announcements:1', 'announcements:99'])
+  })
+
+  it('keeps every key of a source missing from the payload', async () => {
+    store.notifClicked = ['news:5', 'sims:9']
+    await pruneClicked(healthy)
+    expect((await getClicked()).sort()).toEqual(['news:5', 'sims:9'])
+  })
+
+  it('drops keys of a healthy source that is simply empty', async () => {
+    store.notifClicked = ['sims:9']
+    await pruneClicked({ sims: { items: [] } })
+    expect(await getClicked()).toEqual([])
+  })
+
+  it('leaves storage alone when nothing needs dropping', async () => {
+    store.notifClicked = ['announcements:1']
+    await pruneClicked(healthy)
+    expect(await getClicked()).toEqual(['announcements:1'])
   })
 })

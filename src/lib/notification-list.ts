@@ -53,6 +53,7 @@ export function buildNotificationList(
   sources: NotificationsResponse['sources'],
   lastSeen: LastSeen,
   enabled: NotificationSource[],
+  clicked: ReadonlySet<string> = new Set(),
   cap: number = LIST_CAP
 ): NotificationListResult {
   // Checked before anything else: an emptiness test written first would report
@@ -78,6 +79,10 @@ export function buildNotificationList(
     sawAvailable = true
 
     for (const item of group.items) {
+      // Filtered BEFORE the partition, not after: dropping a seen item here
+      // frees a slot that seen.slice() then fills from the next item down.
+      // Filtering the finished list instead would leave a hole.
+      if (clicked.has(`${source}:${item.id}`)) continue
       const display: DisplayItem = { ...item, source, isNew: isItemNew(item, lastSeen[source]) }
       ;(display.isNew ? fresh : seen).push(display)
     }
@@ -92,4 +97,19 @@ export function buildNotificationList(
     items: [...fresh, ...seen.slice(0, Math.max(0, cap - fresh.length))],
     state: 'ok',
   }
+}
+
+export type PopupTab = 'launcher' | 'notifs'
+
+/**
+ * Which tab the popup opens on.
+ *
+ * Reads the cached badge count rather than the built list, deliberately: it is
+ * the number the toolbar icon is showing, so the tab and the icon tell one
+ * story. `enabledCount` of zero means every source is switched off, in which
+ * case there is no tab strip and the launcher is the whole popup.
+ */
+export function selectDefaultTab(newCount: number, enabledCount: number): PopupTab {
+  if (enabledCount === 0) return 'launcher'
+  return newCount > 0 ? 'notifs' : 'launcher'
 }
