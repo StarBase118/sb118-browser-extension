@@ -85,6 +85,13 @@ describe('cached items', () => {
     ['a group that is not an object', { news: 'nope' }],
     ['items that are not an array', { news: { items: 'nope' } }],
     ['an item missing url', { news: { items: [{ id: '1', title: 'A', at: '2026-08-13T10:00:00Z' }] } }],
+    // The four required fields are listed out one by one rather than generated
+    // from a list the guard also reads, so dropping a check from
+    // isNotificationItem cannot quietly drop the test that defends it.
+    ['an item missing id', { news: { items: [{ title: 'A', url: 'https://x/1', at: '2026-08-13T10:00:00Z' }] } }],
+    ['an item missing title', { news: { items: [{ id: '1', url: 'https://x/1', at: '2026-08-13T10:00:00Z' }] } }],
+    ['an item missing at', { news: { items: [{ id: '1', title: 'A', url: 'https://x/1' }] } }],
+    ['a source we do not know', { gossip: { items: [] } }],
   ])('returns null for %s', async (_label, value) => {
     store.notifItems = value
     expect(await getCachedItems()).toBeNull()

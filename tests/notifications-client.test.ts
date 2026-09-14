@@ -87,4 +87,15 @@ describe('fetchNotifications', () => {
     vi.stubGlobal('fetch', vi.fn(async () => json({ nope: true })))
     expect(await fetchNotifications()).toBeNull()
   })
+
+  // The wire side of the same guard the store uses. Pinned from both consumers
+  // on purpose: one shared isNotificationItem now decides what either path
+  // accepts, so a field dropped from it has to fail here as well as there.
+  it('drops a source whose item is missing a required field', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({
+      sources: { news: { items: [{ id: '1', title: 'A', url: 'https://x/1' }] } },
+    })))
+    const res = await fetchNotifications()
+    expect(res?.sources.news).toBeUndefined()
+  })
 })

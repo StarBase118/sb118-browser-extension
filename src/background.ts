@@ -30,8 +30,10 @@ export async function refreshBadge(): Promise<void> {
   // activity nor blanks a list the member could still usefully read.
   if (!res) return
 
-  await setCachedItems(res.sources)
-  const total = countNew(res.sources, await getLastSeen(), enabled)
+  // Different keys, no dependency between them — one less sequential hop the
+  // service worker has to stay alive for.
+  const [, lastSeen] = await Promise.all([setCachedItems(res.sources), getLastSeen()])
+  const total = countNew(res.sources, lastSeen, enabled)
   await setCachedCount(total)
   await setBadge(total)
 }
