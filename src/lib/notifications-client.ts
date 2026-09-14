@@ -1,36 +1,13 @@
 import {
   ALL_SOURCES,
   FETCH_TIMEOUT_MS,
-  type NotificationGroup,
-  type NotificationItem,
+  isNotificationGroup,
+  isRecord,
   type NotificationSource,
   type NotificationsResponse,
 } from '@/lib/notifications-types'
 
 const ENDPOINT = 'https://hq.starbase118.net/api/me/notifications?limit=20'
-
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v)
-}
-
-function isNotificationItem(v: unknown): v is NotificationItem {
-  return (
-    isRecord(v) &&
-    typeof v.id === 'string' &&
-    typeof v.title === 'string' &&
-    typeof v.url === 'string' &&
-    typeof v.at === 'string'
-  )
-}
-
-function isNotificationGroup(v: unknown): v is NotificationGroup {
-  return (
-    isRecord(v) &&
-    Array.isArray(v.items) &&
-    v.items.every(isNotificationItem) &&
-    (v.unavailable === undefined || typeof v.unavailable === 'boolean')
-  )
-}
 
 function normalizeSources(v: Record<string, unknown>): NotificationsResponse['sources'] {
   const sources: NotificationsResponse['sources'] = {}

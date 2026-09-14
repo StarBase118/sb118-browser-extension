@@ -2,6 +2,8 @@ import browser from 'webextension-polyfill'
 import { readStorage } from '@/lib/storage'
 import {
   ALL_SOURCES,
+  isRecord,
+  isSources,
   type LastSeen,
   type NotificationSource,
   type NotificationsResponse,
@@ -12,13 +14,9 @@ const COUNT_KEY = 'notifCount'
 const ITEMS_KEY = 'notifItems'
 const CLICKED_KEY = 'notifClicked'
 
-function isPlainRecord(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v)
-}
-
 function isLastSeen(v: unknown): v is LastSeen {
   return (
-    isPlainRecord(v) &&
+    isRecord(v) &&
     Object.entries(v).every(
       ([source, marker]) => ALL_SOURCES.includes(source as LastSeenKey) && typeof marker === 'string'
     )
@@ -26,10 +24,6 @@ function isLastSeen(v: unknown): v is LastSeen {
 }
 
 type LastSeenKey = (typeof ALL_SOURCES)[number]
-
-function isCount(v: unknown): v is number {
-  return typeof v === 'number' && Number.isFinite(v) && v >= 0
-}
 
 export async function getLastSeen(): Promise<LastSeen> {
   return readStorage(LAST_SEEN_KEY, isLastSeen, {})
@@ -39,32 +33,16 @@ export async function setLastSeen(next: LastSeen): Promise<void> {
   await browser.storage.local.set({ [LAST_SEEN_KEY]: next })
 }
 
+function isCount(v: unknown): v is number {
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0
+}
+
 export async function getCachedCount(): Promise<number> {
   return readStorage(COUNT_KEY, isCount, 0)
 }
 
 export async function setCachedCount(total: number): Promise<void> {
   await browser.storage.local.set({ [COUNT_KEY]: total })
-}
-
-function isItemShape(v: unknown): boolean {
-  return (
-    isPlainRecord(v) &&
-    typeof v.id === 'string' &&
-    typeof v.title === 'string' &&
-    typeof v.url === 'string' &&
-    typeof v.at === 'string'
-  )
-}
-
-function isSourcesShape(v: unknown): v is NotificationsResponse['sources'] {
-  if (!isPlainRecord(v)) return false
-  return Object.entries(v).every(([source, group]) => {
-    if (!ALL_SOURCES.includes(source as NotificationSource)) return false
-    if (!isPlainRecord(group)) return false
-    if (!Array.isArray(group.items) || !group.items.every(isItemShape)) return false
-    return group.unavailable === undefined || typeof group.unavailable === 'boolean'
-  })
 }
 
 /**
@@ -77,9 +55,7 @@ function isSourcesShape(v: unknown): v is NotificationsResponse['sources'] {
  * strength of a cache we could not read would be a claim we have not earned.
  */
 export async function getCachedItems(): Promise<NotificationsResponse['sources'] | null> {
-  const r = await browser.storage.local.get(ITEMS_KEY)
-  const v = (r as Record<string, unknown>)[ITEMS_KEY]
-  return isSourcesShape(v) ? v : null
+  return readStorage<NotificationsResponse['sources'] | null>(ITEMS_KEY, isSources, null)
 }
 
 export async function setCachedItems(sources: NotificationsResponse['sources']): Promise<void> {

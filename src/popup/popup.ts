@@ -468,7 +468,12 @@ async function renderNotifications(): Promise<void> {
   const box = document.getElementById('notiflist')!
   box.innerHTML = ''
 
-  const [cached, prefs, clicked] = await Promise.all([getCachedItems(), getPrefs(), getClicked()])
+  const [cached, prefs, clicked, lastSeen] = await Promise.all([
+    getCachedItems(),
+    getPrefs(),
+    getClicked(),
+    getLastSeen(),
+  ])
   const enabled = enabledSources(prefs)
   enabledCache = enabled
   if (!enabled.length) return
@@ -479,7 +484,6 @@ async function renderNotifications(): Promise<void> {
     return
   }
 
-  const lastSeen = await getLastSeen()
   const { items, state } = buildNotificationList(cached, lastSeen, enabled, new Set(clicked))
 
   // No 'disabled' branch here: the `!enabled.length` guard above already
